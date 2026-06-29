@@ -4059,5 +4059,1989 @@
     ],
     "correctOptionId": "D",
     "explanation": "Correct: For CI/CD and scripting, Claude Code's headless/non-interactive mode (claude -p \"prompt\") is the intended path, and --output-format json gives machine-readable output you can pipe to the next step. B is brittle and unnecessary — driving the interactive TUI with expect and screen-scraping is exactly what headless mode exists to avoid. C misunderstands plan mode, which is a read-only research/planning mode for proposing changes, not a data-extraction output format. A misunderstands CLAUDE.md, which is passive memory/instructions that load into context; it does not by itself trigger or run any job during checkout."
+  },
+  {
+    "id": "support-q11",
+    "unitKind": "scenario",
+    "unitKey": "support",
+    "domainKey": "agentic",
+    "scenarioKey": "support",
+    "topic": "refusal stop_reason",
+    "difficulty": "easy",
+    "scenario": "Your Customer Support Resolution Agent runs on claude-sonnet-4-6 and occasionally a user asks it to do something against policy (e.g., issue a fraudulent refund). When this happens, the API call returns HTTP 200 but the content is empty or partial, and your orchestration loop crashes because it assumed completed responses always contain usable text.",
+    "stem": "Which stop_reason indicates this situation and should trigger a dedicated fallback/handoff path?",
+    "options": [
+      {
+        "id": "A",
+        "text": "max_tokens — the response was cut off mid-generation, so you should retry with a larger max_tokens budget"
+      },
+      {
+        "id": "B",
+        "text": "pause_turn — the model paused a long-running server tool, so you should resubmit the response to continue"
+      },
+      {
+        "id": "C",
+        "text": "end_turn — the model finished normally but produced no content, so you should reparse the text blocks"
+      },
+      {
+        "id": "D",
+        "text": "refusal — the model declined for safety reasons, returning HTTP 200 with empty/partial content, so you route to a refusal fallback"
+      }
+    ],
+    "correctOptionId": "D",
+    "explanation": "D is correct: the \"refusal\" stop_reason is a successful HTTP 200 response where Claude declined to continue, leaving content empty or partial, so your loop must detect it and route to a safe fallback or human handoff. A is wrong because max_tokens means the output was truncated by length, not declined, and content is still present. B is wrong because pause_turn relates to long-running server tool calls and is resolved by resubmitting, not by a refusal fallback. C is wrong because end_turn signals normal completion with real content, and you should never detect completion or refusals by text-parsing content blocks."
+  },
+  {
+    "id": "research-q11",
+    "unitKind": "scenario",
+    "unitKey": "research",
+    "domainKey": "agentic",
+    "scenarioKey": "research",
+    "topic": "stop_reason vs API errors",
+    "difficulty": "medium",
+    "scenario": "In a multi-agent research system, a sub-agent running on claude-sonnet-4-6 is mid-investigation. The orchestrator receives one response with stop_reason 'max_tokens' where the content ends with a partial tool_use block, and a separate, later response that fails with an HTTP 529 (overloaded) error.",
+    "stem": "How should the orchestrator correctly handle these two distinct events?",
+    "options": [
+      {
+        "id": "A",
+        "text": "For the 'max_tokens' case, discard the incomplete turn and re-request with a higher max_tokens (or continue the turn) since the tool_use block was truncated and cannot be executed; for the 529, retry the API call with exponential backoff as it is a transient server-side error."
+      },
+      {
+        "id": "B",
+        "text": "Treat both events identically as turn failures and abort the sub-agent's research task, returning a partial result to the orchestrator in both cases."
+      },
+      {
+        "id": "C",
+        "text": "For the 'max_tokens' case, attempt to parse and execute the partial tool_use input as-is and return a tool_result, then continue; for the 529, surface it to the user as a refusal."
+      },
+      {
+        "id": "D",
+        "text": "For both cases, text-parse the content blocks to determine whether the agent intended to finish, and only retry if no concluding sentence is found."
+      }
+    ],
+    "correctOptionId": "A",
+    "explanation": "A is correct: 'max_tokens' means generation was cut off, so a truncated tool_use is unusable and you must re-request with more room (or continue the turn) rather than treat it as a hard failure, while an HTTP 529 is a transient overloaded error that should be retried with backoff. B wrongly conflates a recoverable truncation and a retryable server error into task abortion. C is dangerous: a truncated tool_use has incomplete/invalid input JSON and must not be executed, and a 529 is a network/server error, not a 'refusal' (refusal is a stop_reason on a 200 response). D violates the rule that you never detect completion by text-parsing content—you branch on stop_reason and HTTP status, not prose."
+  },
+  {
+    "id": "cicd-q11",
+    "unitKind": "scenario",
+    "unitKey": "cicd",
+    "domainKey": "agentic",
+    "scenarioKey": "cicd",
+    "topic": "pause_turn server-tool resume",
+    "difficulty": "medium",
+    "scenario": "A CI/CD pipeline runs Claude Code in headless mode (claude -p) with the web_search server tool enabled to gather release-note context. On one build, the API response comes back with stop_reason \"pause_turn\" mid server-tool execution, and your orchestration wrapper must decide how to continue the long-running search.",
+    "stem": "What is the correct way to handle the \"pause_turn\" stop_reason so the server-tool run completes?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Treat pause_turn as a terminal failure, discard the partial response, and restart the entire task from the original user prompt."
+      },
+      {
+        "id": "B",
+        "text": "Make a follow-up request that appends the returned response.content (as an assistant message) back to the conversation, letting Claude resume the in-progress server-tool turn."
+      },
+      {
+        "id": "C",
+        "text": "Parse the partial content text for a completion marker, and if none is found, re-issue the original messages array unchanged with a higher max_tokens."
+      },
+      {
+        "id": "D",
+        "text": "Execute the web_search yourself locally, wrap the results in a tool_result block, and send that back as the next user turn."
+      }
+    ],
+    "correctOptionId": "B",
+    "explanation": "B is correct: pause_turn signals a paused long-running (server-tool) turn, and you resume it by sending the response.content back as an assistant message in a follow-up request so Claude continues where it left off. A is wrong because restarting throws away valid progress and is unnecessary—pause_turn is resumable, not a failure. C is wrong because you must never detect completion by text-parsing content, and re-sending the original messages restarts rather than resumes the turn. D is wrong because web_search is a server tool that Anthropic executes; you do not run it locally or return a tool_result for it."
+  },
+  {
+    "id": "codegen-q11",
+    "unitKind": "scenario",
+    "unitKey": "codegen",
+    "domainKey": "agentic",
+    "scenarioKey": "codegen",
+    "topic": "tool_use loop termination",
+    "difficulty": "hard",
+    "scenario": "You are building an autonomous code-fixing agent on claude-sonnet-4-6 that loops: send messages, parse any tool_use blocks, run the requested edits/tests as client tools, append tool_result, and repeat. In a production incident the loop ran 200+ times on one ticket, burning budget, because the agent kept emitting tool calls and your driver never decided to stop.",
+    "stem": "What is the most robust way to make this tool_use loop terminate correctly and safely?",
+    "options": [
+      {
+        "id": "A",
+        "text": "After each response, scan the assistant's text content for phrases like \"all tests pass\" or \"task complete\" and break the loop when one is found."
+      },
+      {
+        "id": "B",
+        "text": "Set tool_choice to \"any\" so Claude is forced to keep acting, and rely on the model eventually choosing to stop calling tools on its own."
+      },
+      {
+        "id": "C",
+        "text": "Continue the loop only while stop_reason == \"tool_use\", break immediately on end_turn/refusal/max_tokens/model_context_window_exceeded, and additionally enforce a hard max-iteration cap that aborts the loop regardless of stop_reason."
+      },
+      {
+        "id": "D",
+        "text": "Wrap the whole loop in a try/except and treat any thrown API error as the natural completion signal, since a finished task stops producing new work and the next call will error out."
+      }
+    ],
+    "correctOptionId": "C",
+    "explanation": "C is correct: stop_reason is the authoritative control signal — keep looping while it is \"tool_use\", and terminate on end_turn (Claude is done), refusal, max_tokens, or model_context_window_exceeded; a hard iteration cap is still needed as a fail-safe against pathological loops. A is the anti-pattern the prompt warns against: text-parsing for \"done\" is brittle because wording varies, a refusal returns HTTP 200 with empty/partial content, and natural completion is signaled by end_turn, not prose. B forces tool calls with tool_choice \"any\", which actively prevents the model from ever emitting end_turn, so the loop can never terminate normally. D conflates stop_reason (a normal HTTP 200 field) with API errors — a completed task returns end_turn without throwing, so waiting for an exception is incorrect and would mask real failures."
+  },
+  {
+    "id": "extraction-q11",
+    "unitKind": "scenario",
+    "unitKey": "extraction",
+    "domainKey": "agentic",
+    "scenarioKey": "extraction",
+    "topic": "Sectioning vs Voting",
+    "difficulty": "medium",
+    "scenario": "Your pipeline ingests 5,000 customer-support transcripts. Each transcript must be (1) split into and extracted across four distinct independent fields — sentiment, product mentioned, resolution status, and refund amount — and (2) given a final escalation label that has been unreliable, where a single model pass disagrees with QA reviewers ~15% of the time.",
+    "stem": "How should you apply parallelization patterns to this job?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Use sectioning for the four independent extraction fields by running each as a separate focused subtask, and use voting on the escalation label by running the same labeling prompt multiple times and aggregating the results."
+      },
+      {
+        "id": "B",
+        "text": "Use voting for all four extraction fields by running each field's prompt N times, and use sectioning to split the escalation label into independent sub-labels."
+      },
+      {
+        "id": "C",
+        "text": "Use sectioning for everything, splitting both the four fields and the escalation label into separate concurrent subtasks for maximum throughput."
+      },
+      {
+        "id": "D",
+        "text": "Use voting for everything, running the entire combined extraction-and-labeling prompt N times and taking the majority output across all fields at once."
+      }
+    ],
+    "correctOptionId": "A",
+    "explanation": "A correctly maps the two patterns: sectioning splits genuinely independent subtasks (the four distinct fields) to run in parallel, while voting runs the same task multiple times to boost reliability on the unreliable escalation label. B inverts both: voting wastes calls on already-reliable independent fields and sectioning cannot split a single atomic label into independent parts. C ignores the reliability problem — sectioning a low-agreement label does not improve its accuracy. D conflates patterns by voting on a whole combined prompt, which both loses the focus benefit of sectioning and produces incoherent majority votes across heterogeneous fields."
+  },
+  {
+    "id": "codegen-q12",
+    "unitKind": "scenario",
+    "unitKey": "codegen",
+    "domainKey": "agentic",
+    "scenarioKey": "codegen",
+    "topic": "Evaluator-optimizer pattern",
+    "difficulty": "hard",
+    "scenario": "Your team uses Claude Code to generate SQL migration scripts that must pass a strict checklist: idempotent, reversible with a down-migration, and no destructive DROPs without an explicit guard. Draft quality from a single generation varies widely — some drafts are perfect, others miss the reversibility requirement entirely — but the quality bar is explicit and machine-checkable.",
+    "stem": "Which orchestration pattern best fits this requirement, and why?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Prompt chaining: split generation into fixed sub-steps (schema diff, then DDL, then rollback), since decomposing the task into a static pipeline removes all quality variance."
+      },
+      {
+        "id": "B",
+        "text": "Evaluator-optimizer: have one call generate the migration, a second call critique it against the explicit checklist, and loop refine→re-critique until it passes, because the quality bar is well-defined but individual draft quality is inconsistent."
+      },
+      {
+        "id": "C",
+        "text": "Single-shot generation with output_config json_schema constrained decoding, since enforcing a JSON structure guarantees the migration meets the idempotency and reversibility rules."
+      },
+      {
+        "id": "D",
+        "text": "Parallel sampling: generate five drafts concurrently and have the orchestrator pick the longest one, since more output usually correlates with completeness on migrations."
+      }
+    ],
+    "correctOptionId": "B",
+    "explanation": "B is correct: the evaluator-optimizer (generate→critique→refine) loop is the documented fit when an explicit, checkable quality bar exists but draft quality is variable — the evaluator gives actionable feedback against the checklist and the optimizer revises until it passes. A is wrong because prompt chaining decomposes a task into fixed steps but provides no feedback loop to catch and fix variable quality, so a draft missing reversibility still ships. C is wrong because json_schema constrained decoding only enforces output *shape/syntax*, not semantic correctness like idempotency or guarded DROPs. D is wrong because picking by length is not a real quality signal and parallel sampling without an evaluator never checks the output against the actual bar."
+  },
+  {
+    "id": "research-q12",
+    "unitKind": "scenario",
+    "unitKey": "research",
+    "domainKey": "agentic",
+    "scenarioKey": "research",
+    "topic": "AgentDefinition subagents",
+    "difficulty": "medium",
+    "scenario": "You are building a multi-agent research system with the Claude Agent SDK. You want a specialized 'citation-checker' subagent that only verifies factual claims against fetched sources, restricted to read-only tooling, and you want your orchestrator to delegate to it on demand.",
+    "stem": "What is the correct way to define this specialized subagent and have the orchestrator invoke it?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Skip an AgentDefinition entirely and instead instruct the orchestrator in its system prompt to 'pretend to be a citation checker,' relying on the model to roleplay the subagent with the same full tool set."
+      },
+      {
+        "id": "B",
+        "text": "Define the subagent by setting prefill on the orchestrator's assistant turn so its output is forced into citation-check formatting, then text-parse the response to detect when checking is done."
+      },
+      {
+        "id": "C",
+        "text": "Create an AgentDefinition with a description (when to use it), a focused prompt, and a scoped tools list (e.g., only web_fetch/web_search), register it, and let the orchestrator delegate to it through the Agent tool."
+      },
+      {
+        "id": "D",
+        "text": "Define the subagent as an MCP server exposed over a WebSocket transport so the orchestrator connects to it as a separate citation-checking process."
+      }
+    ],
+    "correctOptionId": "C",
+    "explanation": "C is correct: the Agent SDK's AgentDefinition primitive specifies a description (for delegation routing), a prompt, and a scoped tools list, and the orchestrator invokes it via the built-in Agent tool — giving true isolation and least-privilege tooling. A is wrong because roleplay in one context provides no tool scoping or real subagent isolation. B is wrong because assistant prefilling is removed on 4.6+ (returns HTTP 400), and completion must be detected via stop_reason, never by text-parsing content. D is wrong because WebSocket is not a valid MCP transport (only stdio and Streamable HTTP/SSE are), and an MCP server is unnecessary for defining an in-SDK subagent."
+  },
+  {
+    "id": "research-q13",
+    "unitKind": "scenario",
+    "unitKey": "research",
+    "domainKey": "agentic",
+    "scenarioKey": "research",
+    "topic": "parent_tool_use_id attribution",
+    "difficulty": "hard",
+    "scenario": "A multi-agent research system spins up a lead orchestrator running claude-opus-4-8 that issues three parallel tool calls — each a 'spawn_research_subagent' tool_use with a distinct id — to investigate competing hypotheses. Each subagent runs its own Claude conversation and may itself emit multiple message turns and tool calls before returning findings, and the lead must synthesize the three result streams without conflating them.",
+    "stem": "How should the lead correctly attribute each incoming subagent message to the originating spawn so it can synthesize the parallel results cleanly?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Stamp every subagent's emitted messages with the parent_tool_use_id equal to the lead's spawning tool_use id, then group and synthesize the streams by matching parent_tool_use_id back to each original spawn_research_subagent call."
+      },
+      {
+        "id": "B",
+        "text": "Concatenate all subagent outputs into a single ordered transcript and rely on the lead to text-parse headings and section breaks to determine which finding came from which hypothesis."
+      },
+      {
+        "id": "C",
+        "text": "Detect when each subagent has finished by scanning its final text block for a completion phrase, then merge whichever results arrived before the others as authoritative."
+      },
+      {
+        "id": "D",
+        "text": "Return all three subagent results as text blocks placed immediately after the spawn tool_result blocks in the same lead turn, letting positional order encode attribution."
+      }
+    ],
+    "correctOptionId": "A",
+    "explanation": "A is correct: parent_tool_use_id links each subagent's messages back to the specific spawning tool_use id, giving the lead a deterministic key to group parallel streams and synthesize without conflation. B is wrong because attribution must come from structured ids, not brittle text-parsing of headings. C is wrong because completion must be read from stop_reason (end_turn/tool_use/etc.), never by scanning content for a phrase, and arrival order has no bearing on authority. D is wrong because you must never place text blocks after tool_result blocks in the same turn, and positional ordering is not a reliable attribution mechanism for parallel results."
+  },
+  {
+    "id": "devprod-q11",
+    "unitKind": "scenario",
+    "unitKey": "devprod",
+    "domainKey": "agentic",
+    "scenarioKey": "devprod",
+    "topic": "augmented LLM simplicity",
+    "difficulty": "medium",
+    "scenario": "A platform team wants Claude to answer developer questions about their internal monorepo by pulling from API docs and running a read-only repo-search tool. The questions are mostly single-hop lookups, and the team has a tight deadline and no observability tooling yet.",
+    "stem": "Which initial architecture best fits this workload while avoiding premature agentic complexity?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Build a multi-agent orchestrator with a planner agent that delegates to retrieval and search sub-agents, so the system can scale to any future question type."
+      },
+      {
+        "id": "B",
+        "text": "Start with a single augmented LLM call that retrieves the relevant docs and exposes the repo-search tool, returning answers in one or two tool round trips; add an autonomous loop later only if real traffic shows multi-step reasoning is needed."
+      },
+      {
+        "id": "C",
+        "text": "Implement an open-ended autonomous loop where Claude repeatedly decides its next action, and detect completion by text-parsing the model's content for a phrase like 'final answer'."
+      },
+      {
+        "id": "D",
+        "text": "Skip retrieval and instead fine-tune a model on the monorepo so no tools or context-gathering are required at query time."
+      }
+    ],
+    "correctOptionId": "B",
+    "explanation": "B follows simplicity-first: most questions are single-hop, so an augmented LLM (model + retrieval + tools) handles them with a predictable one-or-two-turn tool round trip, and an autonomous loop is added only when evidence justifies it. A is premature complexity—a multi-agent orchestrator adds cost, latency, and failure modes the workload doesn't need. C is doubly wrong: it jumps to an autonomous loop prematurely and detects completion by text-parsing content instead of inspecting stop_reason (end_turn). D discards retrieval entirely for a costly fine-tune that can't keep pace with a changing repo, when grounded retrieval is the simpler, more accurate fit."
+  },
+  {
+    "id": "support-q12",
+    "unitKind": "scenario",
+    "unitKey": "support",
+    "domainKey": "agentic",
+    "scenarioKey": "support",
+    "topic": "Approval gates",
+    "difficulty": "medium",
+    "scenario": "A customer support resolution agent built on claude-sonnet-4-6 autonomously triages tickets, looks up order status, and drafts replies. The team now wants it to also issue refunds, but a refund is irreversible and must require a human supervisor's approval, while all the read-only triage steps should remain fully autonomous.",
+    "stem": "What is the best way to architect the human-in-the-loop approval gate for the refund action?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Add a system-prompt instruction telling Claude to ask the supervisor for permission before refunding, and rely on the model to pause and wait for a reply on its own."
+      },
+      {
+        "id": "B",
+        "text": "Set tool_choice to \"none\" for the entire session so the model can never call any tool without a human first reviewing every step, including order lookups."
+      },
+      {
+        "id": "C",
+        "text": "Keep read-only tools executing automatically, but when the model emits a tool_use for the issue_refund client tool, halt execution, route the requested action to a supervisor for approval, and only run the tool and return its tool_result once approved (returning is_error otherwise)."
+      },
+      {
+        "id": "D",
+        "text": "Define issue_refund as a server tool so Anthropic executes the refund, and inspect the response text after each turn to decide whether a refund was performed."
+      }
+    ],
+    "correctOptionId": "C",
+    "explanation": "C is correct: the gate is enforced deterministically in your orchestration layer—non-sensitive tools run autonomously, but the issue_refund tool_use is intercepted before execution and only completes after human approval, with denial surfaced via is_error on the tool_result. A is wrong because prompt instructions are not enforcement; the model cannot reliably block its own actions and there is no mechanism for it to literally 'wait.' B is wrong because tool_choice \"none\" disables all tool calls, destroying the autonomy requirement for read-only triage steps. D is wrong because refunds are your business action (a client tool you execute), not an Anthropic server tool, and you must never detect completion by text-parsing content—use stop_reason/tool_use blocks instead."
+  },
+  {
+    "id": "devprod-q12",
+    "unitKind": "scenario",
+    "unitKey": "devprod",
+    "domainKey": "agentic",
+    "scenarioKey": "devprod",
+    "topic": "ACI tool redesign",
+    "difficulty": "medium",
+    "scenario": "Your internal coding agent (claude-sonnet-4-6) calls a repository-search tool that takes a single 'query' string and returns raw grep output across the whole monorepo. Claude frequently picks bad search terms, ignores which directory to search, and misreads the wall of unlabeled matches, so you keep appending more rules to the system prompt with little improvement.",
+    "stem": "Following Anthropic's guidance on agent-computer interface (ACI) investment, what is the most effective way to make this tool reliable?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Redesign the tool's interface to be model-natural: split parameters into a clearly described 'pattern', an optional 'path_scope', and a 'max_results' limit, return structured results with file path, line number, and a snippet per match, and write a precise tool description with examples of good inputs."
+      },
+      {
+        "id": "B",
+        "text": "Keep the tool signature unchanged and add several more paragraphs of system-prompt instructions explaining exactly how to phrase queries and how to interpret the raw grep output."
+      },
+      {
+        "id": "C",
+        "text": "Set tool_choice to 'any' so the model is forced to call a tool every turn, which will make it use the search tool more consistently."
+      },
+      {
+        "id": "D",
+        "text": "Switch the model to claude-haiku-4-5 and raise output_config.effort to 'max' so it reasons harder about which search terms to choose."
+      }
+    ],
+    "correctOptionId": "A",
+    "explanation": "A applies Anthropic's ACI investment principle: a flaky tool is usually an interface problem, so make the inputs/outputs model-natural with well-named, well-described parameters and structured, labeled results rather than piling on prompt text. B is the anti-pattern the scenario already shows failing—stacking instructions cannot fix an interface that emits ambiguous inputs and unreadable output. C forces a tool call every turn but does nothing to improve which terms are chosen or how results are read, and it removes the model's ability to stop when no search is needed. D misuses effort and downgrades to the smaller 200K-context Haiku model; raising reasoning effort does not compensate for a poorly designed tool surface."
+  },
+  {
+    "id": "extraction-q12",
+    "unitKind": "scenario",
+    "unitKey": "extraction",
+    "domainKey": "agentic",
+    "scenarioKey": "extraction",
+    "topic": "Fan-out vs Sequential",
+    "difficulty": "medium",
+    "scenario": "A claims-processing team must extract structured fields from each of 40 independent PDF documents in an uploaded batch, then produce a single consolidated JSON report that aggregates all extractions. Per-document extractions do not depend on one another, but end-to-end latency for the full batch must be minimized for an interactive review UI.",
+    "stem": "Which orchestration topology best fits this workload?",
+    "options": [
+      {
+        "id": "A",
+        "text": "A sequential pipeline where each document's extraction is fed as context into the next, accumulating results until the final document produces the consolidated report"
+      },
+      {
+        "id": "B",
+        "text": "A parallel fan-out that issues one independent extraction call per document concurrently, then a fan-in step that merges the per-document JSON results into the consolidated report"
+      },
+      {
+        "id": "C",
+        "text": "A single call that concatenates all 40 documents into one prompt and asks the model to emit every document's fields plus the merged report in one pass"
+      },
+      {
+        "id": "D",
+        "text": "A sequential pipeline driven by detecting completion of each document's extraction by text-parsing the model's output for a 'DONE' marker before proceeding"
+      }
+    ],
+    "correctOptionId": "B",
+    "explanation": "B is correct: because the per-document extractions are independent, fan-out lets all 40 run concurrently to minimize latency, and a dedicated fan-in/merge step assembles the consolidated report. A serializes independent work, adding latency for no benefit and risking context bloat as results accumulate. C forfeits parallelism, strains accuracy by overloading one context, and can approach context limits, surfacing model_context_window_exceeded. D is an anti-pattern: completion must be inferred from stop_reason (end_turn/tool_use/etc.), never by text-parsing content for a marker."
+  },
+  {
+    "id": "support-q13",
+    "unitKind": "scenario",
+    "unitKey": "support",
+    "domainKey": "agentic",
+    "scenarioKey": "support",
+    "topic": "Agentic termination conditions",
+    "difficulty": "hard",
+    "scenario": "You're building a Customer Support Resolution Agent on claude-sonnet-4-6 that follows a gather→act→verify loop: it pulls order data via client tools, performs an account action (e.g., issuing a refund), then re-queries the system to confirm the action succeeded before responding to the customer. The agent currently runs indefinitely because the loop has no rigorous stopping rule, sometimes re-issuing refunds.",
+    "stem": "Which approach correctly defines the termination condition so the loop stops exactly when verification passes?",
+    "options": [
+      {
+        "id": "A",
+        "text": "After each turn, scan the model's text content for phrases like 'refund confirmed' or 'all done', and break the loop when such a completion phrase appears."
+      },
+      {
+        "id": "B",
+        "text": "Force tool_choice:\"any\" on every turn so the model must keep calling tools, and terminate only when the API returns stop_reason \"max_tokens\"."
+      },
+      {
+        "id": "C",
+        "text": "Continue the tool round-trip while stop_reason is \"tool_use\"; after returning the verify-tool's tool_result, treat the loop as complete when the model responds with stop_reason \"end_turn\" and the verify tool_result confirmed success, otherwise loop again."
+      },
+      {
+        "id": "D",
+        "text": "Use prefilling to seed the assistant turn with a JSON status object, then end the loop once the prefilled status field reads \"verified\"."
+      }
+    ],
+    "correctOptionId": "C",
+    "explanation": "C is correct: the agentic loop is driven by stop_reason — keep executing tools while stop_reason is \"tool_use\", and termination is the conjunction of a clean \"end_turn\" AND the verify tool's structured tool_result confirming success, which is the documented, reliable signal rather than guesswork. A is wrong because you must never detect completion by text-parsing content — phrasing is non-deterministic and easily spoofed. B is wrong because tool_choice:\"any\" forces a tool call every turn (preventing the model from ever ending), and \"max_tokens\" is a truncation/failure signal, not successful completion. D is wrong because assistant prefilling is REMOVED on the 4.6+ family (Sonnet 4.6 returns HTTP 400); structured output should use output_config.format or strict tool use instead."
+  },
+  {
+    "id": "cicd-q12",
+    "unitKind": "scenario",
+    "unitKey": "cicd",
+    "domainKey": "agentic",
+    "scenarioKey": "cicd",
+    "topic": "Batch vs synchronous routing",
+    "difficulty": "medium",
+    "scenario": "Your CI/CD pipeline uses Claude Code in headless mode to handle two jobs: an interactive PR-triage bot that posts a fast pass/fail comment when a developer pushes, and a nightly job that synthesizes a deep cross-repo architecture review over thousands of diffs. The triage must respond within seconds, but the nightly synthesis tolerates hours of latency and your cost budget is tight.",
+    "stem": "How should you orchestrate these two workloads to minimize cost without harming interactive responsiveness?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Keep the per-push triage on the synchronous Messages API for real-time latency, and submit the nightly synthesis jobs to the Batch API to capture the ~50% cost reduction on the latency-tolerant work."
+      },
+      {
+        "id": "B",
+        "text": "Route both workloads through the Batch API so all Claude calls get the ~50% discount uniformly across the pipeline."
+      },
+      {
+        "id": "C",
+        "text": "Keep both on the synchronous Messages API and rely on prompt caching alone to make the nightly synthesis as cheap as batching."
+      },
+      {
+        "id": "D",
+        "text": "Run the triage on the Batch API but poll the batch result every second so it still feels real-time to developers."
+      }
+    ],
+    "correctOptionId": "A",
+    "explanation": "A correctly maps each workload to the right surface: synchronous Messages API for the latency-critical triage and the async Batch API (~50% cheaper) for the latency-tolerant nightly synthesis. B is wrong because the Batch API is asynchronous and would destroy the seconds-level triage responsiveness. C forgoes the substantial batch discount on work that doesn't need real-time results — caching reduces repeated-prefix cost but is not a substitute for batching's per-job savings. D is wrong because polling a batch job cannot make it real-time; batch results are not guaranteed quickly and tight polling defeats the purpose."
+  },
+  {
+    "id": "codegen-q13",
+    "unitKind": "scenario",
+    "unitKey": "codegen",
+    "domainKey": "agentic",
+    "scenarioKey": "codegen",
+    "topic": "Context overflow recovery",
+    "difficulty": "medium",
+    "scenario": "Your Claude Code-style agent runs a long refactoring loop against claude-sonnet-4-6, accumulating tool_results from dozens of file reads and edits across many turns. On the latest API call, the response comes back with stop_reason 'model_context_window_exceeded' and no usable content.",
+    "stem": "What is the correct way to recover and continue the agentic loop?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Immediately resend the exact same request unchanged, since model_context_window_exceeded is a transient server condition that clears on retry"
+      },
+      {
+        "id": "B",
+        "text": "Compact the conversation history (summarize/drop older tool_results and stale turns) to reduce input tokens, then continue the loop with the trimmed message list"
+      },
+      {
+        "id": "C",
+        "text": "Switch the call to claude-haiku-4-5 to gain a larger context window and replay the identical full message history"
+      },
+      {
+        "id": "D",
+        "text": "Add an assistant prefill block instructing Claude to ignore earlier context, then resend the request"
+      }
+    ],
+    "correctOptionId": "B",
+    "explanation": "B is correct: model_context_window_exceeded means the input exceeded the model's window, so you must reduce token count by compacting (summarizing or pruning older tool_results/turns) before continuing — retrying the identical payload will only overflow again. A is wrong because it is not a transient error and resending the same request reproduces it. C is wrong because Haiku 4.5 has a 200K window — smaller than Sonnet's 1M default — so it would overflow sooner, not later. D is wrong because assistant prefilling is removed on the 4.6+ family (it returns HTTP 400) and prefill does not shrink input tokens anyway."
+  },
+  {
+    "id": "extraction-q13",
+    "unitKind": "scenario",
+    "unitKey": "extraction",
+    "domainKey": "prompt",
+    "scenarioKey": "extraction",
+    "topic": "json_schema constrained decoding",
+    "difficulty": "easy",
+    "scenario": "You're building an invoice-extraction service on claude-sonnet-4-6 that must return a strict JSON object (vendor, total, line_items) with guaranteed schema-valid output for downstream database insertion.",
+    "stem": "Which approach is the current, documented way to enforce schema-conformant JSON via constrained decoding?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Set the deprecated output_format parameter to \"json\" so the API forces valid JSON"
+      },
+      {
+        "id": "B",
+        "text": "Prefill the assistant turn with an opening '{' so the model is forced to continue the JSON object"
+      },
+      {
+        "id": "C",
+        "text": "Set output_config:{format:{type:\"json_schema\", ...}} with your invoice schema to constrain decoding to that structure"
+      },
+      {
+        "id": "D",
+        "text": "Add \"Return only valid JSON, no prose\" to the system prompt and text-parse the response for a closing brace to confirm completion"
+      }
+    ],
+    "correctOptionId": "C",
+    "explanation": "C is correct: output_config.format with type \"json_schema\" is the current constrained-decoding mechanism that guarantees output conforms to your schema. A names the deprecated output_format parameter, which is no longer the supported mechanism. B fails because assistant prefilling is removed on the 4.6+ family and returns HTTP 400. D relies on best-effort prompting plus text-parsing to detect completion, which is unreliable—completion should be read from stop_reason, not by scanning content for braces."
+  },
+  {
+    "id": "extraction-q14",
+    "unitKind": "scenario",
+    "unitKey": "extraction",
+    "domainKey": "prompt",
+    "scenarioKey": "extraction",
+    "topic": "Constrained decoding limits",
+    "difficulty": "medium",
+    "scenario": "A medical-claims pipeline uses claude-sonnet-4-6 with output_config:{format:{type:\"json_schema\",...}} to extract patient billing fields into a strict schema. The team assumes constrained decoding alone makes the integration bulletproof and parses every response with JSON.parse without inspecting stop_reason.",
+    "stem": "Which statement most accurately describes what constrained decoding guarantees and where this pipeline can still break?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Constrained decoding guarantees both schema-valid JSON and that the model never refuses, so checking stop_reason is unnecessary overhead."
+      },
+      {
+        "id": "B",
+        "text": "Constrained decoding does not actually enforce the schema; only strict:true tool use does, so the team must switch to tool_use-for-JSON to get any guarantee."
+      },
+      {
+        "id": "C",
+        "text": "Because output_config enforces the schema, a max_tokens cutoff is impossible during a constrained-decoding response, so truncation cannot occur."
+      },
+      {
+        "id": "D",
+        "text": "Constrained decoding guarantees emitted tokens conform to the schema, but the response can still be cut off by stop_reason \"max_tokens\" (yielding incomplete JSON) or returned as stop_reason \"refusal\" with empty/partial content, so the team must inspect stop_reason before parsing."
+      }
+    ],
+    "correctOptionId": "D",
+    "explanation": "D is correct: constrained decoding constrains the token grammar to the schema, but it cannot prevent a max_tokens truncation (producing incomplete, unparseable JSON) or a \"refusal\" stop_reason (HTTP 200 with empty/partial content), so stop_reason must be checked before JSON.parse. A is wrong because constrained decoding does not suppress refusals and stop_reason inspection is required, not optional. B is wrong because output_config json_schema is genuine constrained decoding that does enforce the schema; tool use is just an alternative/older pattern, not the only enforcement. C is wrong because max_tokens truncation can absolutely occur mid-output and is a documented stop_reason; schema enforcement does not extend the token budget."
+  },
+  {
+    "id": "extraction-q15",
+    "unitKind": "scenario",
+    "unitKey": "extraction",
+    "domainKey": "prompt",
+    "scenarioKey": "extraction",
+    "topic": "Structured Output Extraction",
+    "difficulty": "medium",
+    "scenario": "A team on claude-sonnet-4-6 extracts invoice fields (vendor, total, line_items) from PDFs into a fixed schema. They have no need for any external actions or computation — they only want a guaranteed, typed JSON payload back from the model.",
+    "stem": "Which approach best fits this extraction goal?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Use output_config.format with type:\"json_schema\" so constrained decoding returns the typed payload directly"
+      },
+      {
+        "id": "B",
+        "text": "Define a record_invoice tool with the schema and set tool_choice:\"tool\" to force a tool_use block containing the JSON"
+      },
+      {
+        "id": "C",
+        "text": "Prefill the assistant turn with an opening '{' to force the model to emit raw JSON"
+      },
+      {
+        "id": "D",
+        "text": "Add the deprecated output_format parameter set to the JSON schema on the request"
+      }
+    ],
+    "correctOptionId": "A",
+    "explanation": "A is correct: when the only goal is a typed response payload, output_config.format with json_schema uses constrained decoding to return the structured result directly, avoiding the tool round-trip ceremony. B works but is the older tool_use-for-JSON pattern — forcing a tool just to retrieve data adds a tool_use/tool_result loop you don't need. C is invalid on the 4.6+ family: assistant prefilling is removed and returns HTTP 400. D references the deprecated output_format parameter, which is no longer the supported mechanism."
+  },
+  {
+    "id": "support-q14",
+    "unitKind": "scenario",
+    "unitKey": "support",
+    "domainKey": "prompt",
+    "scenarioKey": "support",
+    "topic": "Structured Output Truncation",
+    "difficulty": "hard",
+    "scenario": "Your Customer Support Resolution Agent runs on claude-sonnet-4-6 with output_config.format set to a json_schema (constrained decoding) so each reply emits a structured ticket-resolution object. To keep latency low you set a modest max_tokens, but occasionally the agent emits long resolution summaries and the response comes back with stop_reason \"max_tokens\".",
+    "stem": "How should the integration handle these responses so downstream systems never ingest invalid ticket objects?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Trust that constrained decoding guarantees valid JSON, parse the content directly, and treat any parse exception as a transient network error to retry."
+      },
+      {
+        "id": "B",
+        "text": "Inspect stop_reason; when it is \"max_tokens\", treat the output as potentially truncated/invalid JSON—do not parse it as complete—and retry with a higher max_tokens (or otherwise recover) before validating the parsed object against the schema."
+      },
+      {
+        "id": "C",
+        "text": "Switch back to assistant prefilling by seeding the response with an opening brace to force valid JSON, eliminating the need to check stop_reason."
+      },
+      {
+        "id": "D",
+        "text": "Scan the raw text for a closing brace; if the final '}' is present, accept the JSON, otherwise append one yourself and parse."
+      }
+    ],
+    "correctOptionId": "B",
+    "explanation": "B is correct: constrained decoding shapes tokens toward the schema, but a max_tokens cutoff can stop generation mid-structure, so the only safe signal is stop_reason—on \"max_tokens\" you must treat the JSON as possibly truncated, recover (e.g., raise max_tokens), and still validate the parsed object. A is wrong because constrained decoding does not guarantee completeness under truncation, and a JSON parse failure is a content problem, not a network error to blindly retry. C is wrong because assistant prefilling is removed on the 4.6+ family and returns HTTP 400; output_config.format is the supported mechanism. D is wrong because text-parsing for a brace is fragile and you must never detect completion by scanning content—synthetically appending '}' can silently produce structurally-balanced but semantically corrupt data."
+  },
+  {
+    "id": "extraction-q16",
+    "unitKind": "scenario",
+    "unitKey": "extraction",
+    "domainKey": "prompt",
+    "scenarioKey": "extraction",
+    "topic": "strict tool use",
+    "difficulty": "hard",
+    "scenario": "You run a claude-sonnet-4-6 pipeline that extracts invoice line items into a tool called record_invoice, whose input_schema requires fields like total_cents (integer), currency (enum), and a non-empty items array. Downstream services reject malformed payloads, and you currently see occasional runs where Claude emits extra fields, omits required ones, or returns a near-JSON string that fails to parse.",
+    "stem": "Which approach best guarantees that the tool_use arguments Claude produces always conform to the record_invoice input_schema?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Keep using the tool but add a system-prompt instruction telling Claude to 'only output valid JSON matching the schema and never add extra keys,' then JSON.parse the resulting text block."
+      },
+      {
+        "id": "B",
+        "text": "Drop the tool entirely and use assistant prefilling with an opening '{' so the model is forced to continue a JSON object matching the schema."
+      },
+      {
+        "id": "C",
+        "text": "Define the tool with strict:true so the input arguments are constrained-decoded against the input_schema, and read the validated structure from the tool_use block's input."
+      },
+      {
+        "id": "D",
+        "text": "Set the deprecated output_format parameter to 'json' and parse the assistant's content text, relying on it to align with the tool's schema."
+      }
+    ],
+    "correctOptionId": "C",
+    "explanation": "C is correct: strict:true applies constrained decoding so the tool_use.input is guaranteed to satisfy the declared input_schema (required fields, types, enums), eliminating parse/validation failures. A relies on prompt-only steering, which is best-effort and does not guarantee schema conformance. B is invalid on the 4.6+ family because assistant prefilling is removed and returns HTTP 400. D references the deprecated output_format parameter and, even if it produced JSON, that text is not bound to the tool's schema and must be hand-parsed."
+  },
+  {
+    "id": "extraction-q17",
+    "unitKind": "scenario",
+    "unitKey": "extraction",
+    "domainKey": "prompt",
+    "scenarioKey": "extraction",
+    "topic": "Strict tools + parse helpers",
+    "difficulty": "hard",
+    "scenario": "A team extracts structured invoice records (vendor, line items, totals) from PDFs using claude-sonnet-4-6. Their legacy code prefilled the assistant turn with '{', then text-parsed the response, hand-validated the JSON against a Pydantic model, and re-prompted on validation failures — a brittle manual parse/retry loop that now returns HTTP 400.",
+    "stem": "Which approach removes the manual parse/retry loop while remaining valid on the current 4.6+ family?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Drop the prefill and define a strict tool whose input_schema is the invoice model with tool_choice set to tool, then use the SDK's parse helper (Pydantic/Zod) to deserialize the tool_use input directly into a validated object."
+      },
+      {
+        "id": "B",
+        "text": "Keep prefilling the assistant turn with '{' to force JSON, then pass the text block to model_validate_json() in a try/except retry loop."
+      },
+      {
+        "id": "C",
+        "text": "Set the deprecated output_format parameter to 'json' and detect completion by checking whether the final content text ends with a closing brace before parsing."
+      },
+      {
+        "id": "D",
+        "text": "Use a non-strict tool with tool_choice auto and re-prompt whenever the SDK parse helper raises, relying on the model to self-correct malformed fields across turns."
+      }
+    ],
+    "correctOptionId": "A",
+    "explanation": "A is correct: a strict tool (strict:true) with the model as input_schema constrains decoding to valid structure, tool_choice 'tool' forces emission, and SDK parse helpers deserialize the tool_use input straight into a validated object — no manual parse or retry. B fails because assistant prefilling is removed on 4.6+ and returns HTTP 400, and it preserves the very retry loop being eliminated. C is wrong on two counts: output_format is deprecated, and completion must be detected via stop_reason, never by text-inspecting content. D reintroduces a retry loop and, by using a non-strict tool with tool_choice auto, allows unconstrained/malformed output instead of preventing it at decode time."
+  },
+  {
+    "id": "devprod-q13",
+    "unitKind": "scenario",
+    "unitKey": "devprod",
+    "domainKey": "prompt",
+    "scenarioKey": "devprod",
+    "topic": "eval-first workflow",
+    "difficulty": "medium",
+    "scenario": "Your developer-productivity team is building a Claude-powered code-review assistant on claude-sonnet-4-6. The lead keeps rewriting the system prompt every time a reviewer complains about a false positive, but there is no way to tell whether each edit actually improves quality across the codebase.",
+    "stem": "What should the team do FIRST to put this on an empirical, eval-first footing?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Immediately upgrade to claude-opus-4-8 and add high effort thinking, since a stronger model and more reasoning will resolve the false positives without needing measurement."
+      },
+      {
+        "id": "B",
+        "text": "Assemble a labeled dataset of representative review cases with explicit success criteria, build an automated eval that scores each prompt variant against it, and only then iterate on prompt wording—escalating to a different model or architecture if eval scores plateau."
+      },
+      {
+        "id": "C",
+        "text": "Add an assistant prefill that forces Claude to begin every review with 'No issues found unless severe:' so it suppresses minor false positives by default."
+      },
+      {
+        "id": "D",
+        "text": "Ship each prompt edit to production and judge success by manually reading a handful of the next day's reviews to see if they feel better."
+      }
+    ],
+    "correctOptionId": "B",
+    "explanation": "B is correct: an eval-first workflow defines measurable success criteria and an automated scored dataset BEFORE tweaking wording, which makes prompt changes comparable and tells you when the prompt is no longer the lever (plateau) so you escalate model/architecture. A is wrong because it changes the model and effort with no measurement—you can't know if it helped, and it assumes the lever is the model before establishing any baseline. C is wrong because assistant prefilling is removed on Sonnet 4.6 (returns HTTP 400) and steering format/behavior should use system instructions or output_config, not prefill. D is wrong because eyeballing a handful of cases is anecdotal, unrepeatable, and gives no statistical signal across the codebase."
+  },
+  {
+    "id": "research-q14",
+    "unitKind": "scenario",
+    "unitKey": "research",
+    "domainKey": "prompt",
+    "scenarioKey": "research",
+    "topic": "Prompt chaining checkpoints",
+    "difficulty": "medium",
+    "scenario": "A multi-agent research system uses a single large prompt that asks claude-sonnet-4-6 to (1) extract claims from 30 source documents, (2) cross-check each claim against the others, and (3) emit a final synthesized report — all in one call. The team finds that when extraction is incomplete, the synthesis silently fabricates coverage, and failures are hard to localize.",
+    "stem": "Which redesign best improves reliability by introducing verification checkpoints between stages?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Keep the single prompt but add a final instruction telling Claude to double-check its own work, and parse the response text for the phrase 'verification complete' before accepting the report."
+      },
+      {
+        "id": "B",
+        "text": "Keep the single prompt and use assistant prefilling to force the model to begin its response with the extraction section, ensuring that stage always runs first."
+      },
+      {
+        "id": "C",
+        "text": "Split into sequential calls — extraction, cross-check, synthesis — where each stage uses output_config json_schema constrained decoding, and a programmatic checkpoint validates the structured output (e.g., claim count, required fields) against the schema before passing it to the next stage."
+      },
+      {
+        "id": "D",
+        "text": "Run all three stages as one call but raise output_config.effort to max and enable adaptive thinking, trusting higher reasoning effort to eliminate the silent-fabrication problem without restructuring the pipeline."
+      }
+    ],
+    "correctOptionId": "C",
+    "explanation": "C is correct: prompt chaining splits the fragile monolith into discrete stages whose structured outputs are validated by code (schema/field checks) at each checkpoint, so a defective extraction is caught and localized before synthesis runs. A is wrong because completion/verification must never be detected by text-parsing content — a self-claimed 'verification complete' string is unreliable. B is wrong because assistant prefilling is removed on Sonnet 4.6 and returns HTTP 400; it also wouldn't add real verification. D is wrong because more thinking effort doesn't introduce any programmatic checkpoint and leaves the un-localizable single-prompt failure mode intact."
+  },
+  {
+    "id": "research-q15",
+    "unitKind": "scenario",
+    "unitKey": "research",
+    "domainKey": "prompt",
+    "scenarioKey": "research",
+    "topic": "Adaptive thinking effort",
+    "difficulty": "medium",
+    "scenario": "A multi-agent research system runs a lead orchestrator on claude-opus-4-8 that must synthesize conflicting findings from five sub-agents into a single reconciled conclusion — a hard reasoning step. The team currently allocates extra reasoning by setting thinking with budget_tokens, but wants the current, supported way to give this synthesis step more reasoning headroom.",
+    "stem": "What is the correct way to steer additional reasoning for this hard synthesis step on the 4.6+ family?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Keep thinking:{type:\"adaptive\"} but raise budget_tokens to a high value for the synthesis call to give it more reasoning room"
+      },
+      {
+        "id": "B",
+        "text": "Disable thinking and instead prefill the assistant turn with a chain-of-thought scaffold so the model reasons step by step before answering"
+      },
+      {
+        "id": "C",
+        "text": "Switch to thinking:{type:\"enabled\", budget_tokens: 32000} since that is the explicit control over reasoning depth"
+      },
+      {
+        "id": "D",
+        "text": "Use thinking:{type:\"adaptive\"} and set output_config.effort to a higher tier (e.g., \"high\" or \"max\") for the synthesis call"
+      }
+    ],
+    "correctOptionId": "D",
+    "explanation": "D is correct: on 4.6+ adaptive thinking combined with output_config.effort (low/medium/high/xhigh/max) is the supported lever for steering reasoning depth. A and C are wrong because budget_tokens is deprecated on the 4.6+ family and no longer the way to control thinking depth. B is wrong because assistant prefilling is removed on 4.6+ models and returns HTTP 400; format/reasoning steering must come from output_config or system instructions, not prefill."
+  },
+  {
+    "id": "support-q15",
+    "unitKind": "scenario",
+    "unitKey": "support",
+    "domainKey": "prompt",
+    "scenarioKey": "support",
+    "topic": "Prefill removal 4.6+",
+    "difficulty": "medium",
+    "scenario": "A support resolution agent migrated its model from a legacy 3.x model to claude-sonnet-4-6. The old code forced the reply to start as a JSON object by adding an assistant message prefilled with '{' as the final message in the request. After the migration, every call now returns HTTP 400.",
+    "stem": "What is the correct way to reliably steer the agent's output to valid JSON on claude-sonnet-4-6?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Remove the assistant-prefill message and add output_config:{format:{type:\"json_schema\",...}} to constrain decoding to the desired JSON shape"
+      },
+      {
+        "id": "B",
+        "text": "Keep the assistant-prefill message but change the prefilled token from '{' to a full opening brace plus key to satisfy the validator"
+      },
+      {
+        "id": "C",
+        "text": "Add the deprecated output_format parameter set to \"json\" alongside the existing assistant prefill"
+      },
+      {
+        "id": "D",
+        "text": "Switch the prefill into a stop_sequence of '{' so the model is forced to emit JSON first"
+      }
+    ],
+    "correctOptionId": "A",
+    "explanation": "Assistant prefilling is removed on the 4.6+ family and returns HTTP 400, so the prefill must be deleted and format steering moved to output_config.format (constrained decoding) or system instructions — making A correct. B and C still send the now-rejected assistant-prefill message, so they will continue to 400 regardless of the prefill contents or extra parameters; C also relies on the deprecated output_format parameter. D misuses stop_sequence, which halts generation rather than forcing a JSON start, and does nothing to remove the offending prefill."
+  },
+  {
+    "id": "support-q16",
+    "unitKind": "scenario",
+    "unitKey": "support",
+    "domainKey": "prompt",
+    "scenarioKey": "support",
+    "topic": "explicit success criteria",
+    "difficulty": "medium",
+    "scenario": "A support team runs a Customer Support Resolution Agent on claude-sonnet-4-6. Their system prompt currently says 'Respond helpfully and resolve the customer's issue.' Agents complain the outputs are inconsistent: sometimes a one-line answer, sometimes a wall of text, sometimes missing the next step the customer should take.",
+    "stem": "Which rewrite of the vague instruction best reduces ambiguous outputs by giving Claude testable, explicit success criteria?",
+    "options": [
+      {
+        "id": "A",
+        "text": "'Be more concise and professional, and make sure the customer is happy with your response.'"
+      },
+      {
+        "id": "B",
+        "text": "'Produce a resolution with exactly these sections in order: (1) a one-sentence summary of the issue, (2) the resolution steps as a numbered list, (3) a single explicit next action for the customer. If you cannot resolve the issue, say so and state what information is still needed.'"
+      },
+      {
+        "id": "C",
+        "text": "'Try your best to give a thorough, high-quality answer that covers everything the customer might possibly need to know.'"
+      },
+      {
+        "id": "D",
+        "text": "'Keep responding and adding detail until the issue is clearly fully resolved, then stop.'"
+      }
+    ],
+    "correctOptionId": "B",
+    "explanation": "B converts the vague goal into directive, verifiable criteria — named ordered sections, a required list format, a mandatory next action, and an explicit fallback path — so outputs are consistent and checkable. A stays subjective ('more concise', 'happy') with nothing testable. C is equally open-ended ('thorough', 'everything... possibly') and actually encourages the wall-of-text problem the team has. D defines completion by an unmeasurable judgment ('clearly fully resolved') rather than a concrete output contract and invites unbounded, rambling responses."
+  },
+  {
+    "id": "research-q16",
+    "unitKind": "scenario",
+    "unitKey": "research",
+    "domainKey": "prompt",
+    "scenarioKey": "research",
+    "topic": "Long-context prompt placement",
+    "difficulty": "medium",
+    "scenario": "A multi-agent research system runs a synthesis agent on claude-opus-4-8 that grounds answers in 40 retrieved source documents (~300K tokens total) per query. Reviewers notice the agent often ignores documents buried in the middle and occasionally fabricates citations on long runs.",
+    "stem": "How should the team structure the synthesis prompt to maximize grounding fidelity over the long context?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Place the user's research query first, then append all 40 documents after it, since the model reads top-to-bottom and should see the task before the evidence."
+      },
+      {
+        "id": "B",
+        "text": "Switch the model to claude-haiku-4-5 so the 200K window forces tighter, more focused retrieval and eliminates middle-of-context loss."
+      },
+      {
+        "id": "C",
+        "text": "Place the documents near the top of the prompt (wrapped in clear XML tags per source), put the query at the end, and instruct the model to first quote the exact supporting passages before answering."
+      },
+      {
+        "id": "D",
+        "text": "Use assistant prefilling to seed the response with a citation scaffold, keeping documents and query in their original order to constrain the output toward grounded answers."
+      }
+    ],
+    "correctOptionId": "C",
+    "explanation": "C reflects current long-context guidance: put bulk documents first, delimit each source with XML tags, place the query last (closest to generation), and have the model quote supporting passages before answering to anchor citations and reduce fabrication. A inverts the recommended placement—putting the query before long documents degrades attention to the evidence. B is wrong because Haiku 4.5's 200K window cannot even hold the ~300K context and would hit model_context_window_exceeded; a smaller window does not improve grounding. D is invalid because assistant prefilling is removed on the 4.6+ family (including Opus 4.8) and returns HTTP 400; format steering must use output_config or system instructions."
+  },
+  {
+    "id": "codegen-q14",
+    "unitKind": "scenario",
+    "unitKey": "codegen",
+    "domainKey": "prompt",
+    "scenarioKey": "codegen",
+    "topic": "XML tags and role prompts",
+    "difficulty": "medium",
+    "scenario": "Your team uses claude-sonnet-4-6 inside a Claude Code workflow to refactor functions. Each prompt mixes the refactoring instructions, several files of repository context, and the specific snippet to rewrite, and you want Claude to lean on its file-reading and editing tools only when genuinely needed rather than guessing.",
+    "stem": "How should you structure the prompt to cleanly separate the three content kinds and steer tool-use propensity?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Concatenate the instructions, context, and target snippet into one flat prose paragraph, then set tool_choice:\"any\" so Claude always calls a tool."
+      },
+      {
+        "id": "B",
+        "text": "Use assistant prefilling with an opening <edit> tag to force the model into edit mode and reduce unnecessary tool calls."
+      },
+      {
+        "id": "C",
+        "text": "Put everything in the user turn and rely on text-parsing Claude's reply for a 'TOOL:' marker to decide whether a tool was requested."
+      },
+      {
+        "id": "D",
+        "text": "Wrap the three parts in distinct XML tags like <instructions>, <context>, and <code> within the message, and use a system/role prompt (e.g., 'You are a careful refactoring engineer who only reads or edits files when necessary') to bias tool use toward restraint with tool_choice:\"auto\"."
+      }
+    ],
+    "correctOptionId": "D",
+    "explanation": "D is correct: XML delimiters clearly demarcate instructions vs. context vs. data so Claude parses each role correctly, and a role-framed system prompt with tool_choice:\"auto\" lets the model decide judiciously rather than forcing calls. A is wrong because flat prose blurs the sections and tool_choice:\"any\" forces a tool every turn, the opposite of restraint. B is wrong because assistant prefilling is removed on the 4.6+ family and returns HTTP 400. C is wrong because you must inspect stop_reason (tool_use) and structured content blocks, never text-parse for a marker."
+  },
+  {
+    "id": "research-q17",
+    "unitKind": "scenario",
+    "unitKey": "research",
+    "domainKey": "prompt",
+    "scenarioKey": "research",
+    "topic": "chain-of-thought reasoning",
+    "difficulty": "medium",
+    "scenario": "A multi-agent research system uses a claude-opus-4-8 'synthesizer' agent that must reconcile conflicting findings from three sub-agents and deduce a single final ranking of candidate hypotheses across several constraints. The team finds the synthesizer often jumps to a final ranking that contradicts its own cited evidence.",
+    "stem": "What is the most effective way to improve the accuracy of this multi-step deduction?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Instruct the synthesizer to work through the constraints and reconcile the conflicts step by step in its response before stating the final ranking, optionally raising output_config.effort, so the reasoning precedes the answer."
+      },
+      {
+        "id": "B",
+        "text": "Prefill the assistant turn with the opening of the final ranking JSON to force Claude to commit to an answer immediately and stay concise."
+      },
+      {
+        "id": "C",
+        "text": "Add a system instruction telling Claude to give only the final ranking with no explanation, to avoid the reasoning drifting away from the evidence."
+      },
+      {
+        "id": "D",
+        "text": "Set the deprecated budget_tokens parameter to a large value so the model has more room to reason internally on 4.6+ models."
+      }
+    ],
+    "correctOptionId": "A",
+    "explanation": "A is correct: for multi-step deductions, eliciting explicit reasoning before the answer (let-Claude-think) materially improves accuracy, and adaptive thinking with higher output_config.effort reinforces this. B is wrong because assistant prefilling returns HTTP 400 on the 4.6+ family (including Opus 4.8) and forcing an immediate answer would worsen the very problem. C is wrong because suppressing reasoning removes the step-by-step deduction that fixes the contradiction. D is wrong because budget_tokens is deprecated on 4.6+; effort plus adaptive thinking is the current control."
+  },
+  {
+    "id": "support-q17",
+    "unitKind": "scenario",
+    "unitKey": "support",
+    "domainKey": "prompt",
+    "scenarioKey": "support",
+    "topic": "Grounded citations",
+    "difficulty": "medium",
+    "scenario": "You are building a support resolution agent on claude-sonnet-4-6 that answers billing questions using passages retrieved from your knowledge base, which are injected into the prompt for each turn. QA finds the agent occasionally invents refund timelines and policy details that do not appear in any retrieved passage.",
+    "stem": "Which prompt-engineering approach most directly reduces these ungrounded claims?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Add 'Always be confident and never say you are unsure' to the system prompt so the agent gives decisive answers to every customer."
+      },
+      {
+        "id": "B",
+        "text": "Instruct the agent to answer using only the provided passages, cite the source ID for each claim, and reply that the information is unavailable when no passage supports an answer."
+      },
+      {
+        "id": "C",
+        "text": "Lower the agent's effort to 'low' and shorten responses, assuming concise answers are less likely to contain fabricated details."
+      },
+      {
+        "id": "D",
+        "text": "Prefill the assistant turn with the opening of a grounded answer so the model is forced to continue from verified text."
+      }
+    ],
+    "correctOptionId": "B",
+    "explanation": "B is correct because constraining answers to the supplied passages, requiring per-claim source citations, and providing an explicit 'unavailable' fallback grounds the output in retrieved evidence and gives a safe path when nothing supports an answer, which is the documented way to cut hallucinations. A actively increases fabrication by forbidding uncertainty. C confuses brevity with accuracy—lower effort and shorter text do not enforce grounding and can drop needed citations. D is invalid on the 4.6+ family, where assistant prefilling is removed and returns HTTP 400; format and grounding must be steered via system instructions or output_config."
+  },
+  {
+    "id": "devprod-q14",
+    "unitKind": "scenario",
+    "unitKey": "devprod",
+    "domainKey": "prompt",
+    "scenarioKey": "devprod",
+    "topic": "Console prompting tools",
+    "difficulty": "easy",
+    "scenario": "A developer on your team needs a first-draft prompt for a new ticket-summarization feature and wants to get something working quickly inside the Anthropic Console before iterating.",
+    "stem": "What is the recommended way to get an initial, structured prompt scaffold fast in this workflow?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Hand-write the entire prompt from a blank editor, since Console tools cannot produce usable starting prompts"
+      },
+      {
+        "id": "B",
+        "text": "Copy a teammate's unrelated prompt verbatim and ship it without testing, to avoid spending any time iterating"
+      },
+      {
+        "id": "C",
+        "text": "Use the Console's prompt generator to create a structured first draft from a task description, then refine it with the prompt improver and test it"
+      },
+      {
+        "id": "D",
+        "text": "Skip prompting tools entirely and rely on assistant prefilling to force the exact summary format on Sonnet 4.6"
+      }
+    ],
+    "correctOptionId": "C",
+    "explanation": "C is correct: the Console prompt generator produces a structured first draft from a plain task description, and the prompt improver helps refine it before testing—much faster than starting from scratch. A is wrong because the Console's generator/improver exist precisely to produce usable starting prompts. B is a bad anti-pattern: copying an unrelated prompt without testing ignores the feature's actual requirements. D is wrong because assistant prefilling is removed on the 4.6+ family (returns HTTP 400); format should be steered via output_config.format or system instructions, not prefill."
+  },
+  {
+    "id": "codegen-q15",
+    "unitKind": "scenario",
+    "unitKey": "codegen",
+    "domainKey": "prompt",
+    "scenarioKey": "codegen",
+    "topic": "generate-verify-revise gating",
+    "difficulty": "hard",
+    "scenario": "Your team uses Claude Code with claude-opus-4-8 to generate database migration scripts that will run against production. Before any migration is committed, you need an automated self-critique pass that re-examines the generated SQL for destructive operations and either approves it or returns a structured verdict that a hook can act on.",
+    "stem": "What is the most reliable way to implement the verify pass and gate the commit on its outcome?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Run a second Claude call that receives the generated SQL and emits a verdict via output_config:{format:{type:\"json_schema\",...}} with fields like {approved:bool, risks:[...]}, then enforce the gate with a PreToolUse/commit hook that exits 2 to block when approved is false."
+      },
+      {
+        "id": "B",
+        "text": "Prefill the verify call's assistant turn with '{\"approved\":' so Claude is forced to continue the JSON verdict, then text-parse the streamed output to decide whether to commit."
+      },
+      {
+        "id": "C",
+        "text": "Put 'Always review migrations for destructive operations before committing' in CLAUDE.md and rely on that injected instruction to deterministically block unsafe commits."
+      },
+      {
+        "id": "D",
+        "text": "Have the verify call return its verdict as a free-text summary and detect approval by checking whether the final message text contains the word 'approved' and whether stop_reason is end_turn."
+      }
+    ],
+    "correctOptionId": "A",
+    "explanation": "A is correct: constrained decoding via output_config json_schema guarantees a machine-readable verdict, and a Claude Code hook is deterministic enforcement (exit 2 blocks the action), which is exactly what a high-stakes gate needs. B fails because assistant prefilling is removed on the 4.6+ family (including Opus 4.8) and returns HTTP 400, and text-parsing output is fragile. C is wrong because CLAUDE.md is injected context, not enforced config—it cannot deterministically block anything. D is wrong because completion/approval must never be inferred by text-parsing content; a structured schema plus stop_reason handling is the documented approach."
+  },
+  {
+    "id": "support-q18",
+    "unitKind": "scenario",
+    "unitKey": "support",
+    "domainKey": "tools",
+    "scenarioKey": "support",
+    "topic": "tool_choice values",
+    "difficulty": "easy",
+    "scenario": "You are building a Customer Support Resolution Agent on claude-sonnet-4-6 with three client tools: lookup_order, issue_refund, and escalate_to_human. For one specific step you need the model to call exactly one tool (any of the three) on its next response rather than replying with plain text, but you don't want to pick which tool for it.",
+    "stem": "Which tool_choice value enforces that the model must emit a tool_use block on its next turn while still letting Claude decide which of the available tools to call?",
+    "options": [
+      {
+        "id": "A",
+        "text": "tool_choice: {\"type\": \"auto\"} — Claude decides whether to use a tool, so a tool call is not guaranteed"
+      },
+      {
+        "id": "B",
+        "text": "tool_choice: {\"type\": \"any\"} — forces Claude to use one of the provided tools, but Claude chooses which one"
+      },
+      {
+        "id": "C",
+        "text": "tool_choice: {\"type\": \"none\"} — prevents Claude from calling any tool on this turn"
+      },
+      {
+        "id": "D",
+        "text": "tool_choice: {\"type\": \"tool\", \"name\": \"issue_refund\"} — forces a tool call but fixes it to the named tool"
+      }
+    ],
+    "correctOptionId": "B",
+    "explanation": "B is correct: \"any\" requires Claude to call one of the supplied tools while leaving the selection to the model. A (\"auto\") only allows but does not require a tool call, so Claude could respond with text. C (\"none\") forbids tool use entirely, the opposite of the goal. D does force a tool call but locks it to issue_refund, removing Claude's freedom to choose among the three."
+  },
+  {
+    "id": "extraction-q18",
+    "unitKind": "scenario",
+    "unitKey": "extraction",
+    "domainKey": "tools",
+    "scenarioKey": "extraction",
+    "topic": "forced tool_choice",
+    "difficulty": "medium",
+    "scenario": "You are building an invoice-extraction service on claude-sonnet-4-6. You expose a single client tool, record_invoice, whose schema captures vendor, total, and line items. For each uploaded document you need Claude to emit exactly one structured call to record_invoice with no preamble, narration, or chance of skipping the tool.",
+    "stem": "Which configuration most reliably guarantees a single structured call to record_invoice on every request?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Set tool_choice to {\"type\":\"auto\"} and add a system instruction telling Claude to always call record_invoice."
+      },
+      {
+        "id": "B",
+        "text": "Set tool_choice to {\"type\":\"any\"} so Claude is required to use one of the available tools."
+      },
+      {
+        "id": "C",
+        "text": "Set tool_choice to {\"type\":\"tool\",\"name\":\"record_invoice\"} so Claude is forced to emit that specific tool call."
+      },
+      {
+        "id": "D",
+        "text": "Use an assistant prefill beginning the response with the record_invoice tool_use block to force the call."
+      }
+    ],
+    "correctOptionId": "C",
+    "explanation": "C is correct: tool_choice {\"type\":\"tool\",\"name\":\"record_invoice\"} forces Claude to call exactly that named tool with no leading text, which is the canonical way to guarantee one structured extraction call. A only encourages — auto still lets Claude answer in plain text or skip the call. B forces *some* tool but, with multiple tools available, doesn't pin record_invoice specifically; here there's one tool but \"any\" is the wrong steering primitive for naming a single tool. D fails because assistant prefilling is removed on the 4.6+ family and returns HTTP 400."
+  },
+  {
+    "id": "research-q18",
+    "unitKind": "scenario",
+    "unitKey": "research",
+    "domainKey": "tools",
+    "scenarioKey": "research",
+    "topic": "client vs server tools",
+    "difficulty": "medium",
+    "scenario": "You are building a multi-agent research system on claude-opus-4-8. Each sub-agent has access to web_search and web_fetch (Anthropic server tools) plus a custom query_internal_corpus tool that hits your company's private vector database. During a run you notice some tool_use blocks resolve without your application code ever being invoked, while others require your code to act.",
+    "stem": "Which statement correctly distinguishes how these tools are handled in the request/response loop?",
+    "options": [
+      {
+        "id": "A",
+        "text": "All three tools (web_search, web_fetch, query_internal_corpus) are server tools, so Anthropic executes them and you never return tool_result blocks for any of them."
+      },
+      {
+        "id": "B",
+        "text": "You must execute web_search and web_fetch yourself and return their results as tool_result blocks, while query_internal_corpus is executed automatically by Anthropic."
+      },
+      {
+        "id": "C",
+        "text": "query_internal_corpus is a server tool because it requires a network call, so Anthropic runs it for you using the credentials in your tools definition."
+      },
+      {
+        "id": "D",
+        "text": "web_search and web_fetch are server tools Anthropic executes within the same turn, whereas query_internal_corpus is a client tool: you parse its tool_use block, run the database query, and send back a tool_result block in the next user turn."
+      }
+    ],
+    "correctOptionId": "D",
+    "explanation": "D is correct: web_search and web_fetch are Anthropic-hosted server tools that execute server-side without your involvement, while a custom tool like query_internal_corpus is a client tool that surfaces a tool_use block you must execute and answer with a tool_result. A is wrong because query_internal_corpus is a client tool, not a server tool, and does require a tool_result from you. B inverts reality—it claims you run the built-in web tools and Anthropic runs your private one. C wrongly assumes any tool needing a network call is server-side; server vs client is defined by who executes it, not by whether networking is involved, and Anthropic has no access to your private DB credentials."
+  },
+  {
+    "id": "devprod-q15",
+    "unitKind": "scenario",
+    "unitKey": "devprod",
+    "domainKey": "tools",
+    "scenarioKey": "devprod",
+    "topic": "Tool search scaling",
+    "difficulty": "medium",
+    "scenario": "Your internal devprod assistant on claude-sonnet-4-6 connects to a fleet of MCP servers exposing roughly 350 tools across CI, ticketing, deploys, and observability. Loading every tool schema on every turn bloats the prompt, slows responses, and most requests only need a handful of tools.",
+    "stem": "What is the recommended way to scale to this many tools without sending all schemas on every turn?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Manually pre-filter the tool list per request with a keyword heuristic in your client, sending only tools whose names match the user's words verbatim."
+      },
+      {
+        "id": "B",
+        "text": "Enable the tool search tool (server tool) and mark the bulk of your tools with deferred definitions so Claude discovers and loads only the relevant tool schemas on demand."
+      },
+      {
+        "id": "C",
+        "text": "Concatenate all 350 schemas into a single cached system block with cache_control so the repeated tokens read at ~0.1x and the token cost stops mattering."
+      },
+      {
+        "id": "D",
+        "text": "Set tool_choice to \"any\" so Claude is forced to call a tool each turn, which lets you trim the schema list to whatever it last used."
+      }
+    ],
+    "correctOptionId": "B",
+    "explanation": "B is correct: the tool search tool (an Anthropic-executed server tool) combined with deferred tool definitions lets Claude search the catalog and load only the relevant schemas on demand, keeping per-turn context small while still scaling to hundreds of tools. A is a brittle anti-pattern — naive keyword matching misses semantically relevant tools and breaks when phrasing differs. C still pays prompt-processing latency and context-window pressure for 350 schemas every turn; caching lowers token cost but does not solve the scaling/relevance problem. D misuses tool_choice — \"any\" forces a tool call but does nothing to reduce which schemas are loaded, and it can force inappropriate calls."
+  },
+  {
+    "id": "support-q19",
+    "unitKind": "scenario",
+    "unitKey": "support",
+    "domainKey": "tools",
+    "scenarioKey": "support",
+    "topic": "structured actionable tool errors via is_error",
+    "difficulty": "medium",
+    "scenario": "Your Customer Support Resolution Agent (built on claude-sonnet-4-6) calls a client tool lookup_order that hits an internal billing API. Sometimes the API times out (transient) and sometimes the order ID simply does not exist (permanent). You want the agent to autonomously retry transient failures but stop and explain permanent ones, without you parsing free-text content.",
+    "stem": "How should you return the failure on the tool_result so the agent reliably distinguishes transient from permanent errors?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Return a normal tool_result (no is_error) whose text says 'TIMEOUT' or 'NOT_FOUND', and instruct the agent in the system prompt to read that string and decide whether to retry."
+      },
+      {
+        "id": "B",
+        "text": "Omit the tool_result entirely on failure and instead append a separate text block describing the error so the model sees it in the conversation."
+      },
+      {
+        "id": "C",
+        "text": "Return the tool_result with is_error:true and a structured content payload (e.g. JSON with fields like category:'transient'|'permanent' and retryable:true/false) so the model can branch on the categorized, retry-flagged result."
+      },
+      {
+        "id": "D",
+        "text": "Set is_error:true for every failure but include only a generic 'Tool failed' message, relying on the model to guess from prior turns whether a retry is appropriate."
+      }
+    ],
+    "correctOptionId": "C",
+    "explanation": "C is correct: tool errors are signaled via is_error:true on the tool_result, and putting machine-readable, categorized fields (category, retryable) in the content lets the agent branch deterministically between transient retries and permanent failures. A is wrong because dropping is_error and forcing the model to text-parse a status string is brittle and ignores the documented error channel. B is wrong because a tool_use must be answered with a tool_result block, and you must never place text blocks after tool_result in the same turn—omitting the result breaks the round trip. D is wrong because while is_error is set, a generic undifferentiated message gives the model nothing to distinguish transient from permanent, defeating the goal."
+  },
+  {
+    "id": "research-q19",
+    "unitKind": "scenario",
+    "unitKey": "research",
+    "domainKey": "tools",
+    "scenarioKey": "research",
+    "topic": "parallel tool fallback",
+    "difficulty": "medium",
+    "scenario": "Your multi-agent research orchestrator runs Claude Sonnet 4.6. A lead agent issues a single turn that returns three tool_use blocks in one response: a server-side web_search and two client-side database lookups you must execute yourself. You need to return results correctly within the round trip.",
+    "stem": "How should the orchestrator handle this multi-block response and the mix of server- and client-executed tools?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Reject the response because a single assistant turn may contain only one tool_use block; re-prompt with tool_choice:\"tool\" to force one tool at a time."
+      },
+      {
+        "id": "B",
+        "text": "Execute only the first tool_use block, append a text note explaining the others were skipped, and send that as the next user turn."
+      },
+      {
+        "id": "C",
+        "text": "Manually execute the web_search yourself and return all three as client tool_results, since the orchestrator owns every tool execution."
+      },
+      {
+        "id": "D",
+        "text": "Recognize the stop_reason is tool_use, let Anthropic execute the server-side web_search and return its result automatically, execute only the two client tools yourself, and reply with one user turn containing a tool_result block for each tool_use_id."
+      }
+    ],
+    "correctOptionId": "D",
+    "explanation": "D is correct: a single turn can carry multiple parallel tool_use blocks; server tools like web_search are executed by Anthropic and their results returned automatically, while you execute only the client tools and return one tool_result per tool_use_id in a single user turn. A is wrong because parallel tool_use blocks are fully supported—forcing one at a time is unnecessary. B is wrong because you must return a tool_result for every tool_use_id, and appending a trailing text block after tool_results is invalid. C is wrong because web_search is a server tool executed by Anthropic, not by your client."
+  },
+  {
+    "id": "devprod-q16",
+    "unitKind": "scenario",
+    "unitKey": "devprod",
+    "domainKey": "tools",
+    "scenarioKey": "devprod",
+    "topic": "MCP initialize handshake",
+    "difficulty": "hard",
+    "scenario": "Your devprod team is building an internal MCP server that exposes repo-search tools to Claude Code. During integration testing, the host opens an MCP connection and you need to confirm the initialize handshake is behaving correctly before any tool calls flow.",
+    "stem": "What is actually negotiated and exchanged during the MCP initialize handshake, and how should the client-server relationship be structured?",
+    "options": [
+      {
+        "id": "A",
+        "text": "The client and server exchange protocolVersion plus their respective capabilities, and the server returns its serverInfo; each MCP client maintains a dedicated 1:1 connection to a single server."
+      },
+      {
+        "id": "B",
+        "text": "The handshake negotiates only the transport (stdio vs Streamable HTTP vs WebSocket); model IDs and context-window sizes are agreed there so the server can size responses."
+      },
+      {
+        "id": "C",
+        "text": "During initialize the server enumerates and returns the full list of tool definitions, and a single client multiplexes connections to many servers at once."
+      },
+      {
+        "id": "D",
+        "text": "The handshake exchanges API authentication keys and selects claude-sonnet-4-6, after which one server fans out to drive multiple clients."
+      }
+    ],
+    "correctOptionId": "A",
+    "explanation": "A is correct: initialize negotiates protocolVersion and capabilities, the server advertises serverInfo, and the MCP model pairs one client to one server (1:1). B is wrong because WebSocket is not an MCP transport and model IDs/context windows are not negotiated at the protocol layer. C conflates initialize (capability negotiation) with tools/list (which actually enumerates tools) and inverts the connection model — a client connects to one server, not many. D invents an auth/model-selection step that does not occur in the handshake and reverses the relationship (it is one client per server, not one server per many clients)."
+  },
+  {
+    "id": "devprod-q17",
+    "unitKind": "scenario",
+    "unitKey": "devprod",
+    "domainKey": "tools",
+    "scenarioKey": "devprod",
+    "topic": "MCP client primitives",
+    "difficulty": "hard",
+    "scenario": "Your team ships an internal MCP server that exposes developer tooling (deploy, query-logs, run-migration). The available tools change at runtime depending on which repos a developer is authorized for, and you want connected Claude clients to refresh their tool list without reconnecting. You also want the server to occasionally ask the user a clarifying question and to delegate a short summarization step back to the client's model.",
+    "stem": "Which design correctly uses MCP primitives and respects the MCP trust model?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Have the server emit a tools/listChanged notification, then directly invoke the client's LLM by opening a WebSocket transport to perform the summarization without user involvement."
+      },
+      {
+        "id": "B",
+        "text": "Emit a notifications/tools/list_changed JSON-RPC notification so the client re-issues tools/list; use the client sampling primitive (subject to host approval) for the summarization and the elicitation primitive to ask the user a clarifying question."
+      },
+      {
+        "id": "C",
+        "text": "Skip listChanged and have the client poll tools/list on a fixed timer; perform summarization with a server-side resources primitive and gather user input via the logging primitive."
+      },
+      {
+        "id": "D",
+        "text": "Push the new tool definitions to the client inside an initialize response replay, and treat sampling, elicitation, and logging as server primitives the host must auto-approve."
+      }
+    ],
+    "correctOptionId": "B",
+    "explanation": "B is correct: the server signals a dynamic tool set via the tools/list_changed notification (prompting the client to re-call tools/list), and sampling, elicitation, and logging are CLIENT primitives — sampling delegates an LLM call back through the client under host approval, and elicitation requests structured user input. A is wrong because WebSocket is not an MCP transport (only stdio and Streamable HTTP/SSE), and sampling must respect host-in-the-loop approval, not bypass the user. C wrongly relies on fixed polling instead of the listChanged notification, and miscasts resources/logging — logging is for diagnostic messages, not user prompts. D is wrong because tool changes aren't pushed via an initialize replay, and sampling/elicitation/logging are client primitives that the trust model says the host should gate, not auto-approve."
+  },
+  {
+    "id": "cicd-q13",
+    "unitKind": "scenario",
+    "unitKey": "cicd",
+    "domainKey": "tools",
+    "scenarioKey": "cicd",
+    "topic": "MCP transports",
+    "difficulty": "medium",
+    "scenario": "Your platform team operates a shared MCP server that exposes internal deployment tools (trigger-rollout, fetch-build-logs) to dozens of CI/CD pipelines and engineers' Claude Code sessions simultaneously. Access must be gated by OAuth, and the server runs as a centrally hosted remote service rather than a process spawned per pipeline.",
+    "stem": "Which MCP transport should this remote, multi-client, OAuth-protected server use?",
+    "options": [
+      {
+        "id": "A",
+        "text": "stdio, launching the server as a subprocess that each pipeline pipes into over stdin/stdout"
+      },
+      {
+        "id": "B",
+        "text": "WebSocket, since it natively supports persistent bidirectional connections for many concurrent clients"
+      },
+      {
+        "id": "C",
+        "text": "Streamable HTTP/SSE, which supports remote hosting, many concurrent clients, and OAuth-based authorization"
+      },
+      {
+        "id": "D",
+        "text": "stdio behind a custom reverse proxy that multiplexes all clients onto the single server process"
+      }
+    ],
+    "correctOptionId": "C",
+    "explanation": "C is correct because MCP defines exactly two transports — stdio and Streamable HTTP/SSE — and the HTTP/SSE transport is the one designed for remote, multi-client servers with OAuth authorization. A is wrong because stdio spawns a local single-client subprocess over stdin/stdout and cannot serve a centrally hosted remote endpoint for many clients. B is wrong because WebSocket is not an MCP transport at all. D is wrong because wrapping a single stdio process behind a proxy still leaves one local single-client transport and does not provide the standard remote/OAuth model that Streamable HTTP/SSE offers."
+  },
+  {
+    "id": "extraction-q19",
+    "unitKind": "scenario",
+    "unitKey": "extraction",
+    "domainKey": "tools",
+    "scenarioKey": "extraction",
+    "topic": "Tool description disambiguation",
+    "difficulty": "medium",
+    "scenario": "A document-processing service on claude-sonnet-4-6 defines two client tools: extract_invoice (with description 'Extract data') and extract_receipt (with description 'Extract data'). When users upload invoices, Claude frequently calls extract_receipt instead, returning the wrong schema. The team wants Claude to reliably pick the right tool based on document type.",
+    "stem": "What is the most appropriate fix?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Set tool_choice to {type:'tool', name:'extract_invoice'} so the correct tool is always forced for every request."
+      },
+      {
+        "id": "B",
+        "text": "Set tool_choice to 'any' to force Claude to always use one of the tools and stop returning plain text."
+      },
+      {
+        "id": "C",
+        "text": "Add a prefill assistant turn beginning the extract_invoice tool call to bias Claude toward it."
+      },
+      {
+        "id": "D",
+        "text": "Rewrite each tool's description to clearly disambiguate when to use it — e.g. extract_invoice: 'Use ONLY for vendor invoices that bill the recipient for goods/services owed; captures invoice number, due date, line items' and extract_receipt: 'Use ONLY for proof-of-purchase receipts for completed payments.'"
+      }
+    ],
+    "correctOptionId": "D",
+    "explanation": "D is correct: tool selection is driven by description quality, and the root cause is two identical, uninformative descriptions ('Extract data') that give Claude nothing to disambiguate; clear, distinct descriptions let Claude route correctly while still handling mixed inputs. A is wrong because forcing extract_invoice with tool_choice:'tool' would break receipt uploads — it hardcodes one tool regardless of document type. B is wrong because tool_choice:'any' forces a tool call but does nothing to fix the choice between the two equally-described tools. C is wrong because assistant prefilling is removed on the 4.6+ family (Sonnet 4.6 returns HTTP 400) and prefilling tool calls is not a valid steering technique here."
+  },
+  {
+    "id": "cicd-q14",
+    "unitKind": "scenario",
+    "unitKey": "cicd",
+    "domainKey": "tools",
+    "scenarioKey": "cicd",
+    "topic": "Least-privilege tool scoping",
+    "difficulty": "medium",
+    "scenario": "Your CI pipeline runs Claude Code in headless mode with several subagents: a 'reviewer' that only reads diffs and posts comments, a 'fixer' that edits files, and a 'deployer' that calls a deployment MCP server. Security wants each role to hold only the capabilities it actually needs, enforced so a compromised or misbehaving reviewer cannot write files or trigger a deploy.",
+    "stem": "What is the most appropriate way to apply least-privilege tool scoping across these subagents?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Give each subagent its own restricted tool allowlist — reviewer gets read/comment tools only, fixer adds edit tools, deployer connects only to the deployment MCP server — and back the boundaries with hooks that deny out-of-scope actions (exit 2) deterministically."
+      },
+      {
+        "id": "B",
+        "text": "Grant all subagents the same full tool set and document the intended boundaries in CLAUDE.md so each agent knows which tools it should avoid using."
+      },
+      {
+        "id": "C",
+        "text": "Set tool_choice to \"none\" for the reviewer and \"any\" for the others, which fully removes write and deploy capabilities from the reviewer at the API level."
+      },
+      {
+        "id": "D",
+        "text": "Expose every capability through a single broad MCP server and rely on strict:true schemas to prevent the reviewer from invoking write or deploy tools."
+      }
+    ],
+    "correctOptionId": "A",
+    "explanation": "A is correct: least-privilege means each subagent is configured with only the minimum tools, and hooks provide deterministic enforcement (exit 2 blocks an action) rather than relying on the model's discretion. B is wrong because CLAUDE.md is injected guidance, not enforced configuration, so it cannot prevent misuse. C misuses tool_choice — \"none\" only suppresses tool calls for a single request and \"any\" forces a call, so neither establishes a persistent capability boundary. D is wrong because strict:true only validates argument schemas; it does nothing to stop a subagent from invoking a write or deploy tool that is exposed to it."
+  },
+  {
+    "id": "support-q20",
+    "unitKind": "scenario",
+    "unitKey": "support",
+    "domainKey": "context",
+    "scenarioKey": "support",
+    "topic": "context editing vs memory",
+    "difficulty": "hard",
+    "scenario": "A Customer Support Resolution Agent runs on claude-sonnet-4-6 and handles enterprise tickets that can span dozens of turns over several hours, repeatedly calling client tools to look up orders, refund policies, and account history. The conversation regularly accumulates large, stale tool_result payloads (full order JSON dumps) that bloat the context, but the agent must still preserve a few durable facts — the customer's verified identity and an agreed resolution plan — for the entire session.",
+    "stem": "What is the most appropriate context-management strategy for this long-running session?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Enable server-side compaction (beta) and stop appending the prior assistant response.content on each turn, letting Anthropic reconstruct the full history from the compacted summary alone."
+      },
+      {
+        "id": "B",
+        "text": "Use context editing to automatically clear stale tool_result blocks as the window fills, while writing the verified identity and agreed resolution plan into durable state artifacts (memory) so they survive independent of the trimmed transcript."
+      },
+      {
+        "id": "C",
+        "text": "Set the request context window to 200K tokens for all turns and rely on prompt caching breakpoints to keep older tool_results from counting against usage."
+      },
+      {
+        "id": "D",
+        "text": "Detect when the conversation is getting long by text-parsing the assistant's reply for phrases like 'context full', then start a brand-new conversation with no carried-over state."
+      }
+    ],
+    "correctOptionId": "B",
+    "explanation": "B is correct: context editing prunes the bulky, stale tool_result payloads to control window growth, while persisting the small set of must-keep facts into state/memory artifacts that are not subject to transcript trimming — the right separation of transient bulk from durable state. A is wrong because server-side compaction is beta and explicitly REQUIRES appending the full response.content across turns; skipping that breaks it. C is wrong because Sonnet 4.6 defaults to a 1M-token window (not a universal 200K), and prompt caching reduces cost but does not stop tokens from counting toward the window. D is wrong because completion/length must never be inferred by text-parsing content (overflow surfaces as stop_reason model_context_window_exceeded), and discarding all state loses the required durable facts."
+  },
+  {
+    "id": "research-q20",
+    "unitKind": "scenario",
+    "unitKey": "research",
+    "domainKey": "context",
+    "scenarioKey": "research",
+    "topic": "server-side compaction",
+    "difficulty": "medium",
+    "scenario": "A multi-agent research orchestrator runs long investigation loops on claude-opus-4-8 with server-side compaction (beta) enabled to keep tool-heavy histories within budget. To save bandwidth, the team's message-building code strips out any content blocks it doesn't recognize before appending the assistant turn back into messages, and after a few turns the agents start losing track of earlier findings.",
+    "stem": "What is the correct way to maintain conversation continuity for these agents?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Re-summarize the prior turns into a single text block yourself and append only that summary, discarding the model's returned content blocks."
+      },
+      {
+        "id": "B",
+        "text": "Disable compaction entirely and rely on the 1M context window, parsing the assistant text to decide what history to keep."
+      },
+      {
+        "id": "C",
+        "text": "Append the model's full response.content array verbatim each turn, including the compaction/thinking blocks, so the server-side compaction state is preserved."
+      },
+      {
+        "id": "D",
+        "text": "Keep only the visible text and tool_use blocks from each response and drop the rest before sending the next request."
+      }
+    ],
+    "correctOptionId": "C",
+    "explanation": "Server-side compaction is beta and explicitly requires appending the entire response.content (compaction and thinking blocks included) back into messages on every turn; stripping unrecognized blocks breaks the compaction state, which is exactly why the agents lose context. A substitutes your own summary for the server-managed compaction blocks, defeating the feature. B and D both drop the required blocks (and B additionally relies on the forbidden anti-pattern of text-parsing to track state); discarding thinking/compaction blocks is the root cause of the failure, not the fix."
+  },
+  {
+    "id": "codegen-q16",
+    "unitKind": "scenario",
+    "unitKey": "codegen",
+    "domainKey": "context",
+    "scenarioKey": "codegen",
+    "topic": "Per-model context windows",
+    "difficulty": "medium",
+    "scenario": "Your team runs a Claude Code workflow that loads a large monorepo into context before each refactor. For cost reasons, simple lint-fix tasks are routed to claude-haiku-4-5, while architecture-level refactors go to claude-sonnet-4-6. An engineer is writing a budget planner that decides, per request, whether a given codebase dump will fit before sending it.",
+    "stem": "How should the planner determine the maximum input context for each routed model?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Assume a flat 200K-token window for every Claude model, since 200K is the universal default across the lineup."
+      },
+      {
+        "id": "B",
+        "text": "Assume 1M tokens for every model in the lineup, including claude-haiku-4-5, because all current models default to the extended window."
+      },
+      {
+        "id": "C",
+        "text": "Skip pre-flight sizing entirely and detect overflow by text-parsing the response for a 'context exceeded' phrase in the content."
+      },
+      {
+        "id": "D",
+        "text": "Plan for claude-sonnet-4-6 defaulting to a 1M-token window and claude-haiku-4-5 at 200K, and treat overflow as the stop_reason 'model_context_window_exceeded'."
+      }
+    ],
+    "correctOptionId": "D",
+    "explanation": "D is correct: current Opus/Sonnet default to a 1M-token window while Haiku 4.5 is 200K, so per-model budgeting must differ, and overflow is signaled by the stop_reason 'model_context_window_exceeded'. A is wrong because the flat-200K assumption is stale—Sonnet 4.6 defaults to 1M. B is wrong because Haiku 4.5 is 200K, not 1M, so dumps sized for Sonnet could overflow Haiku. C is wrong because completion/overflow is never detected by text-parsing content; it is surfaced via the structured stop_reason field."
+  },
+  {
+    "id": "extraction-q20",
+    "unitKind": "scenario",
+    "unitKey": "extraction",
+    "domainKey": "context",
+    "scenarioKey": "extraction",
+    "topic": "context accumulation",
+    "difficulty": "medium",
+    "scenario": "You run a long-lived extraction agent on claude-sonnet-4-6 that processes scanned invoices. Each turn sends a scanned-page image, the model calls a 'lookup_vendor' client tool, you return a tool_result, and the model emits structured JSON. After ~30 invoices in the same conversation, you hit stop_reason 'model_context_window_exceeded' even though no single invoice is large.",
+    "stem": "What best explains why the context filled up, and what is the correct mental model for budgeting it?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Only the assistant's emitted JSON counts toward the window; the images and tool definitions are metadata billed separately and do not consume context tokens."
+      },
+      {
+        "id": "B",
+        "text": "The system prompt, tool definitions, every image, and every tool_result all consume tokens and accumulate across turns because the full prior message history is resent each request, so the 1M window must budget for that growing sum."
+      },
+      {
+        "id": "C",
+        "text": "Sonnet 4.6 has a fixed 200K context window, so any conversation past roughly 200K tokens overflows regardless of how content is composed."
+      },
+      {
+        "id": "D",
+        "text": "Each new turn starts a fresh context that only includes the latest image and tool_result, so accumulation is impossible unless a single image exceeds the window."
+      }
+    ],
+    "correctOptionId": "B",
+    "explanation": "B is correct: requests are stateless, so the entire prior history—system prompt, tool schemas, all images, all tool_results, and assistant outputs—is resent and accumulates against the window every turn, which is why many small invoices eventually overflow the 1M budget. A is wrong because images and tool definitions absolutely consume tokens, not just emitted JSON. C is wrong because Sonnet 4.6 defaults to a 1M-token window, not a universal 200K (only Haiku 4.5 is 200K). D is wrong because the API is stateless and the client must resend full history; nothing is automatically pruned, so accumulation is exactly what happens."
+  },
+  {
+    "id": "extraction-q21",
+    "unitKind": "scenario",
+    "unitKey": "extraction",
+    "domainKey": "context",
+    "scenarioKey": "extraction",
+    "topic": "Batch API extraction",
+    "difficulty": "medium",
+    "scenario": "A data team needs to classify and extract structured fields from 800,000 archived support tickets for an offline analytics report due next week. The job is not user-facing and has no latency requirement, but cost is a major concern and each ticket should be returned as JSON matching a fixed schema.",
+    "stem": "What is the most appropriate way to run this large offline extraction job?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Send all 800,000 tickets as real-time synchronous Messages API calls in parallel, since results are needed immediately for the report."
+      },
+      {
+        "id": "B",
+        "text": "Concatenate thousands of tickets into a single 1M-token Messages request to amortize cost, parsing the model's text output for completion."
+      },
+      {
+        "id": "C",
+        "text": "Use real-time calls but rely on assistant prefilling to force the JSON shape and cut token costs on each request."
+      },
+      {
+        "id": "D",
+        "text": "Submit the tickets via the Message Batches API for asynchronous processing (~24h turnaround, ~50% cost discount), using output_config json_schema to enforce the extraction structure."
+      }
+    ],
+    "correctOptionId": "D",
+    "explanation": "D is correct: the workload is offline with no latency requirement, so the Message Batches API's asynchronous ~24h processing and ~50% discount directly fit the cost-sensitive, non-user-facing goal, while output_config json_schema enforces the structured output. A is wrong because synchronous real-time calls forgo the batch discount and add no value when there is no latency requirement and a week of slack. B is wrong because packing tickets into one giant prompt risks model_context_window_exceeded, makes per-ticket results hard to isolate, and text-parsing for completion is unreliable (use stop_reason instead). C is wrong because assistant prefilling is removed on the 4.6+ family and returns HTTP 400; format must be steered via output_config or system instructions."
+  },
+  {
+    "id": "support-q21",
+    "unitKind": "scenario",
+    "unitKey": "support",
+    "domainKey": "context",
+    "scenarioKey": "support",
+    "topic": "Prompt caching breakpoints",
+    "difficulty": "hard",
+    "scenario": "A Customer Support Resolution Agent on claude-sonnet-4-6 sends a 9,000-token tool catalog plus a 6,000-token policy/system prompt on every ticket, followed by a growing conversation. The team wants to cut input costs and added a single cache_control breakpoint at the end of the system block, but the bill barely moved and they want to confirm caching is actually working.",
+    "stem": "What change and verification step will most effectively reduce input cost here?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Place cache_control breakpoints after the tools block and after the system block (each prefix exceeds the ~1024-token minimum), then confirm a populated usage.cache_read_input_tokens on subsequent requests, since reads bill at ~0.1x."
+      },
+      {
+        "id": "B",
+        "text": "Move the breakpoint to the first user message so the entire tools+system prefix caches behind it, then check stop_reason for a cache_hit value."
+      },
+      {
+        "id": "C",
+        "text": "Add cache_control to all 4 allowed breakpoints inside the messages array only, leaving tools and system uncached, then read usage.cache_creation_input_tokens to confirm hits."
+      },
+      {
+        "id": "D",
+        "text": "Switch to the Batch API for ~50% savings instead of caching, since prompt caching and batching cannot be combined and caching writes cost ~1.25x which negates the benefit."
+      }
+    ],
+    "correctOptionId": "A",
+    "explanation": "A is correct: caching renders in tools→system→messages order, so a breakpoint after tools and after system caches the large static prefixes; reads bill ~0.1x and you verify with usage.cache_read_input_tokens. B is wrong because a breakpoint on a user message still caches the prefix before it, but stop_reason has no 'cache_hit' value—you confirm via the usage object. C is wrong because the volatile messages array changes every turn (poor cache hits) and cache_creation_input_tokens reflects writes, not reads. D is wrong because batching and caching are not mutually exclusive, and write overhead (~1.25x once) is quickly amortized by ~0.1x reads on a heavily reused 15k-token prefix."
+  },
+  {
+    "id": "research-q21",
+    "unitKind": "scenario",
+    "unitKey": "research",
+    "domainKey": "context",
+    "scenarioKey": "research",
+    "topic": "Hybrid RAG retrieval",
+    "difficulty": "medium",
+    "scenario": "A multi-agent research system uses a lead claude-opus-4-8 agent that dispatches subagents to query a corpus of biomedical papers. Analysts complain that searches for exact identifiers like gene symbols (e.g., 'TP53', 'IL-6R') and CAS registry numbers frequently miss the obviously relevant documents, even though pure semantic (dense vector) retrieval returns topically related material.",
+    "stem": "Which retrieval design best fixes the exact-term recall problem while keeping results auditable for the research team?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Keep pure semantic retrieval but lower the similarity threshold so more chunks are returned, letting Claude filter the larger set down to the exact matches."
+      },
+      {
+        "id": "B",
+        "text": "Use hybrid retrieval that fuses dense semantic scores with a lexical BM25 signal, and attach source/document provenance metadata to each returned chunk so citations and exact-term hits are traceable."
+      },
+      {
+        "id": "C",
+        "text": "Replace the embedding model with a larger one and re-embed the corpus, assuming a stronger model will encode rare identifiers well enough for exact recall."
+      },
+      {
+        "id": "D",
+        "text": "Drop retrieval entirely and load the full corpus into the 1M-token Opus context window each turn so no exact term can be missed."
+      }
+    ],
+    "correctOptionId": "B",
+    "explanation": "B is correct: dense semantic search captures meaning but is weak on rare exact tokens like 'TP53', whereas BM25 lexical scoring excels at exact-term matching, so fusing the two recovers the missed identifiers; attaching provenance metadata keeps results auditable for a research team. A merely floods context with low-relevance chunks and still leaves exact terms semantically buried, harming precision and cost. C is a costly re-embed that does not solve the structural weakness of dense vectors on rare exact tokens. D ignores retrieval design, blows past practical cost/latency limits, and risks model_context_window_exceeded rather than improving exact recall."
+  },
+  {
+    "id": "support-q22",
+    "unitKind": "scenario",
+    "unitKey": "support",
+    "domainKey": "context",
+    "scenarioKey": "support",
+    "topic": "multi-agent handoff provenance",
+    "difficulty": "medium",
+    "scenario": "A Customer Support Resolution Agent (built on claude-sonnet-4-6) triages a billing dispute, then hands off to a specialized refund agent. The triage step calls a payments tool that may fail, and the refund agent must receive the verified customer record, the triage findings, and any tool failures so it doesn't act on missing data.",
+    "stem": "Which handoff design correctly carries critical context plus propagated errors and lets you verify the handed-off output?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Have the triage agent end its turn, then text-parse its final message for phrases like 'refund approved' to decide whether to call the refund agent, passing along only that summary string."
+      },
+      {
+        "id": "B",
+        "text": "Prefill the refund agent's assistant turn with the triage JSON to force it to continue from that context, and treat any payments tool failure by silently dropping the failed tool_result."
+      },
+      {
+        "id": "C",
+        "text": "Return the failed payments call as a tool_result with is_error:true so the failure is visible in context, pass the full triage record into the refund agent, and constrain the refund agent's output with output_config.format json_schema so you can validate the structured handoff result."
+      },
+      {
+        "id": "D",
+        "text": "Place a text block after each tool_result in the same turn to annotate provenance, and rely on a universal 200K context window to guarantee the whole transcript fits without checking usage."
+      }
+    ],
+    "correctOptionId": "C",
+    "explanation": "C is correct: tool failures are propagated via is_error:true on the tool_result (keeping them visible to the next agent), the full record is carried forward, and constrained decoding via output_config.format json_schema makes the handoff output verifiable. A is wrong because completion/decisions must come from stop_reason and structured data, never from text-parsing content. B is wrong because assistant prefilling returns HTTP 400 on the 4.6+ family, and silently dropping a failed tool_result destroys provenance. D is wrong because text blocks must not follow tool_result blocks in the same turn, and the 200K window is Haiku-only—current Sonnet defaults to 1M, and you should still verify via usage rather than assume."
+  },
+  {
+    "id": "support-q23",
+    "unitKind": "scenario",
+    "unitKey": "support",
+    "domainKey": "context",
+    "scenarioKey": "support",
+    "topic": "Escalation via stop_reason",
+    "difficulty": "medium",
+    "scenario": "You run a Customer Support Resolution Agent on claude-sonnet-4-6 that autonomously answers billing questions and issues small refunds via client tools. Product requires that the agent never silently fails: if Claude declines a request, runs out of room, or the API is throttled, the conversation must hand off cleanly to a human queue with full context preserved.",
+    "stem": "Which approach most reliably implements the autonomous-resolution-vs-handoff threshold with graceful degradation?",
+    "options": [
+      {
+        "id": "A",
+        "text": "After each response, scan the text content for apology phrases like \"I can't help with that\" or \"I'm unable to\"; if found, route to a human, otherwise resolve autonomously."
+      },
+      {
+        "id": "B",
+        "text": "Set max_tokens very high so responses never truncate, and treat any HTTP 429 from the API as a fatal error that fails the ticket so a human picks it up on retry."
+      },
+      {
+        "id": "C",
+        "text": "Prefill the assistant turn with a JSON escalation envelope so every reply is machine-parseable, then branch on its decision field to escalate or resolve."
+      },
+      {
+        "id": "D",
+        "text": "Branch on stop_reason: route refusal and model_context_window_exceeded turns to the human queue with the accumulated context, retry 429s with backoff (degrading to the human queue once retries are exhausted), and only auto-resolve on a clean end_turn (or completed tool_use loop)."
+      }
+    ],
+    "correctOptionId": "D",
+    "explanation": "D is correct because stop_reason is the authoritative completion signal: refusal (HTTP 200 with empty/partial content) and model_context_window_exceeded both indicate the agent cannot complete autonomously and should hand off, while 429 rate limits warrant backoff before degrading to a human. A is wrong because you must never detect refusals or completion by text-parsing content — phrasing varies and refusals carry the dedicated refusal stop_reason. B is wrong because a high max_tokens does not prevent context-window overflow, and treating every 429 as fatal abandons graceful degradation (backoff/retry is the documented pattern). C is wrong because assistant prefilling is removed on the 4.6+ family and returns HTTP 400; structured output should use output_config.format json_schema instead."
+  },
+  {
+    "id": "codegen-q17",
+    "unitKind": "scenario",
+    "unitKey": "codegen",
+    "domainKey": "claudecode",
+    "scenarioKey": "codegen",
+    "topic": "path-scoped rules precedence",
+    "difficulty": "hard",
+    "scenario": "Your team wants Claude Code to apply strict TypeScript conventions only when editing files under src/components/**, while leaving generated migration files alone. A project-level rule already exists at ./.claude/rules/, but an individual developer also has a broader user-level rule in ~/.claude/rules/ that conflicts with the project's stricter component guidance.",
+    "stem": "How should you author the path-scoped rule so it loads only for the component files, and what determines which rule wins when the user-level and project-level rules overlap?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Create the rule in ./.claude/rules/ with YAML frontmatter declaring paths globs like 'src/components/**/*.tsx'; it loads only when matching files are in context, and the project-level rule takes precedence over the user-level (~/.claude) rule per the standard precedence ordering."
+      },
+      {
+        "id": "B",
+        "text": "Put the glob in the rule body as a regex and rely on Claude to text-match filenames at runtime; the user-level (~/.claude) rule always wins because user scope is more specific than project scope."
+      },
+      {
+        "id": "C",
+        "text": "Add a hooks entry that exits 2 for non-component files so the rule is enforced deterministically, and set the user-level rule to override the project rule since home-directory config is loaded last."
+      },
+      {
+        "id": "D",
+        "text": "List the component paths in CLAUDE.md as enforced configuration; CLAUDE.md path scoping guarantees the rule activates only for those files, and CLAUDE.md outranks both rules directories."
+      }
+    ],
+    "correctOptionId": "A",
+    "explanation": "A is correct: .claude/rules/ files use YAML 'paths' frontmatter with glob patterns to scope loading to matching files, and the documented precedence is managed-policy > user (~/.claude) > project (./.claude) > local — so project beats user, giving the stricter component rule priority here. B is wrong on both counts: scoping is done via frontmatter globs, not body regex parsed at runtime, and user scope does not outrank project scope. C misuses hooks (they enforce shell-level checks, not load rule text) and inverts precedence (user is not loaded last to win). D is wrong because CLAUDE.md is injected context, not enforced/path-scoped configuration, and does not provide glob-based file scoping or outrank the rules directories."
+  },
+  {
+    "id": "devprod-q18",
+    "unitKind": "scenario",
+    "unitKey": "devprod",
+    "domainKey": "claudecode",
+    "scenarioKey": "devprod",
+    "topic": "Managed permissions.deny",
+    "difficulty": "hard",
+    "scenario": "A platform team rolls out Claude Code to 300 engineers. Compliance requires that any invocation of a known destructive command (a fleaked-credential cleanup script that force-pushes and wipes git history) be HARD-blocked organization-wide, so that individual engineers cannot override or disable the protection in their own settings.",
+    "stem": "Which enforcement mechanism best satisfies the requirement of an org-wide, non-overridable hard block on that command?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Document the prohibition in the project-level CLAUDE.md so the instruction is injected into every session's context"
+      },
+      {
+        "id": "B",
+        "text": "Add a path-scoped rule under .claude/rules/ with a globs frontmatter that warns when the script path is touched"
+      },
+      {
+        "id": "C",
+        "text": "Add the command pattern to permissions.deny in the managed (admin/policy) settings, which sits above user and project settings in precedence and cannot be overridden"
+      },
+      {
+        "id": "D",
+        "text": "Install a project-level PreToolUse hook that detects the command and exits 2 to block the Bash call"
+      }
+    ],
+    "correctOptionId": "C",
+    "explanation": "C is correct: managed (admin/policy) settings sit at the top of the precedence chain (managed-policy > user > project > local), so a permissions.deny entry there is a true hard block that engineers cannot override or disable. A is wrong because CLAUDE.md is injected context, not enforced config — Claude can be steered to ignore it and there is no guaranteed block. B is wrong because .claude/rules/ provides path-scoped guidance, not an enforced deny, and it lives in the project tree where it can be edited. D is wrong because although a PreToolUse hook (exit 2) deterministically blocks, a project-level hook lives in the repo and individual engineers can modify or remove it, failing the non-overridable, org-wide requirement."
+  },
+  {
+    "id": "codegen-q18",
+    "unitKind": "scenario",
+    "unitKey": "codegen",
+    "domainKey": "claudecode",
+    "scenarioKey": "codegen",
+    "topic": "CLAUDE.md soft guidance",
+    "difficulty": "medium",
+    "scenario": "A team adds a line to their project CLAUDE.md: 'Never read or output the contents of any .env file.' During a codegen session, Claude Code is asked to debug a config-loading bug and proceeds to read .env and echo a secret into the diff. Leadership wants a guarantee this can never happen again.",
+    "stem": "What is the correct understanding of why CLAUDE.md failed here, and how to actually enforce the rule?",
+    "options": [
+      {
+        "id": "A",
+        "text": "CLAUDE.md was loaded at the wrong precedence level; moving the rule into the local-scope settings file makes it an enforced security policy."
+      },
+      {
+        "id": "B",
+        "text": "The rule failed because CLAUDE.md only applies to user scope (~/.claude); duplicating the same text into a .claude/rules/ file with a *.env glob makes it a hard block."
+      },
+      {
+        "id": "C",
+        "text": "CLAUDE.md is enforced config, so the fix is to phrase the rule more strictly and add tool_choice:'none' to prevent file reads entirely."
+      },
+      {
+        "id": "D",
+        "text": "CLAUDE.md is injected as soft context (an instruction in the prompt), not a deterministic gate, so the model can disregard it; enforce the rule with a PreToolUse hook that exits 2 to block reads of .env files."
+      }
+    ],
+    "correctOptionId": "D",
+    "explanation": "D is correct: CLAUDE.md content is injected into the model's context as guidance and is not deterministically enforced, so the model may override it; hooks are the deterministic enforcement mechanism (exit 2 blocks a tool call), making them the right tool for a hard security rule. A is wrong because changing precedence still leaves the rule as injected guidance, not enforcement — local scope is just lower-priority context. B is wrong because .claude/rules/ files are also injected context (path-scoped guidance), not hard blocks, and globs don't gate tool execution. C is wrong because CLAUDE.md is not enforced config, and tool_choice:'none' would disable all tool use globally rather than selectively blocking .env reads — breaking the debugging task."
+  },
+  {
+    "id": "devprod-q19",
+    "unitKind": "scenario",
+    "unitKey": "devprod",
+    "domainKey": "claudecode",
+    "scenarioKey": "devprod",
+    "topic": "@path imports & memory hygiene",
+    "difficulty": "medium",
+    "scenario": "A team's root CLAUDE.md has grown to 600 lines, mixes contradictory style rules, and pulls in shared docs by pasting their full contents inline. Developers report Claude inconsistently follows the guidance, and the file is hard to maintain.",
+    "stem": "What is the best way to restructure this memory to improve hygiene and reliability?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Trim the root CLAUDE.md to a focused set of specific, non-contradictory instructions under ~200 lines, and reference shared docs via @path imports (which can chain up to 4 hops deep) instead of pasting their contents inline."
+      },
+      {
+        "id": "B",
+        "text": "Move all 600 lines into a hooks script so the guidance becomes deterministically enforced and Claude can no longer ignore it."
+      },
+      {
+        "id": "C",
+        "text": "Keep the single large file but wrap every conflicting rule in an assistant prefill block so the preferred behavior is locked in at generation time."
+      },
+      {
+        "id": "D",
+        "text": "Split the content across many @path imports chained 8+ hops deep so each file stays tiny, regardless of total line count or duplicated rules."
+      }
+    ],
+    "correctOptionId": "A",
+    "explanation": "A is correct: CLAUDE.md is injected context that works best when concise (~200 lines), specific, and free of contradictions, and @path imports let you modularize shared docs with a maximum chain depth of 4 hops. B is wrong because hooks are for deterministic enforcement of actions, not for dumping verbose, contradictory prose memory. C is wrong because assistant prefilling is removed on the 4.6+ family and returns HTTP 400, and it would not resolve the contradictions anyway. D is wrong because imports are capped at 4 hops, and merely splitting files does not fix the duplicated/contradictory rules driving inconsistency."
+  },
+  {
+    "id": "cicd-q15",
+    "unitKind": "scenario",
+    "unitKey": "cicd",
+    "domainKey": "claudecode",
+    "scenarioKey": "cicd",
+    "topic": "MCP config portability",
+    "difficulty": "medium",
+    "scenario": "Your team runs Claude Code in headless mode inside CI to triage failing tests. The pipeline needs an MCP server (a stdio-based GitHub tool) available to every developer and every CI runner, but the auth token must come from each environment's secret store rather than being committed to the repo.",
+    "stem": "Which configuration approach gives portable, repo-shared MCP wiring while keeping the credential out of version control?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Add the server to each developer's ~/.claude user-scope config and ask CI to replicate that file, hard-coding the token so all surfaces match exactly."
+      },
+      {
+        "id": "B",
+        "text": "Define the server in CLAUDE.md so the instructions to launch it are injected into context on every run, with the token referenced inline."
+      },
+      {
+        "id": "C",
+        "text": "Commit a project-scoped .mcp.json declaring the stdio server and reference the token via ${VAR} env-var expansion, so each surface supplies the secret from its own environment."
+      },
+      {
+        "id": "D",
+        "text": "Configure the server over a WebSocket transport in .mcp.json so the token can be passed during the connection upgrade instead of being stored on disk."
+      }
+    ],
+    "correctOptionId": "C",
+    "explanation": "C is correct: a project-scoped .mcp.json is checked into the repo so every developer and CI runner shares the same server definition, and ${VAR} expansion pulls the secret from each surface's own environment, keeping it out of version control. A puts config in user scope (not repo-portable) and hard-codes the token, leaking the secret. B misuses CLAUDE.md, which is injected context — not enforced MCP configuration — and still embeds the token. D is wrong because WebSocket is not a valid MCP transport; only stdio and Streamable HTTP/SSE are supported."
+  },
+  {
+    "id": "devprod-q20",
+    "unitKind": "scenario",
+    "unitKey": "devprod",
+    "domainKey": "claudecode",
+    "scenarioKey": "devprod",
+    "topic": "Skill vs always-loaded memory",
+    "difficulty": "medium",
+    "scenario": "A devprod team has a 40-line database-migration runbook (naming conventions, rollback steps, a specific command sequence) that engineers only need maybe twice a month. Today it lives in CLAUDE.md, which has grown large and is bloating every Claude Code session's context, even for unrelated tasks.",
+    "stem": "What is the most appropriate way to make the migration runbook available without paying its context cost on every session?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Move the runbook into a hook so it runs deterministically and is injected before each prompt."
+      },
+      {
+        "id": "B",
+        "text": "Keep it in CLAUDE.md but add it under a managed-policy file so it always takes precedence."
+      },
+      {
+        "id": "C",
+        "text": "Put it in a .claude/rules/ file with no frontmatter so it loads as an always-on global rule."
+      },
+      {
+        "id": "D",
+        "text": "Author it as a Skill with a clear description, so progressive disclosure loads its details only when a migration task is detected as relevant."
+      }
+    ],
+    "correctOptionId": "D",
+    "explanation": "D is correct: Skills are description-triggered with progressive disclosure, so the runbook's full content is loaded only when the model judges a migration task relevant — ideal for occasional workflows, keeping it out of every session's context. A is wrong: hooks are deterministic enforcement (exit-2 blocking / JSON decision control), not a mechanism for injecting reference text on demand. B is wrong: CLAUDE.md content (including managed-policy) is always-injected context, so it keeps bloating every session and precedence doesn't reduce load cost. C is wrong: a rule without path-scoping frontmatter loads as always-on context, defeating the goal of loading only when relevant."
+  },
+  {
+    "id": "research-q22",
+    "unitKind": "scenario",
+    "unitKey": "research",
+    "domainKey": "agentic",
+    "scenarioKey": "research",
+    "topic": "Routing pattern",
+    "difficulty": "medium",
+    "scenario": "A multi-agent research assistant receives a mix of trivial factual lookups (e.g., 'who is the current CEO of X?') and deep multi-source synthesis questions (e.g., 'compare the regulatory landscape across five jurisdictions'). The team wants to control cost and latency without degrading answer quality on hard questions.",
+    "stem": "Which agentic building-block pattern best handles this mixed workload?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Send every query through the full multi-agent orchestrator with web_search, sub-agent fan-out, and high effort, since that guarantees the deepest answer for all queries."
+      },
+      {
+        "id": "B",
+        "text": "Send every query to a single cheap claude-haiku-4-5 call with no tools, since most research questions can be answered from the model's parametric knowledge."
+      },
+      {
+        "id": "C",
+        "text": "Always run both the cheap path and the heavy path in parallel for every query, then return whichever response finishes first."
+      },
+      {
+        "id": "D",
+        "text": "Add a lightweight classifier/router step (a small model call returning a json_schema-constrained label) that directs trivial lookups to a single cheap call and complex queries to the full multi-agent path."
+      }
+    ],
+    "correctOptionId": "D",
+    "explanation": "D is the routing pattern: a cheap classifier inspects each query and dispatches it to the right-cost path, so simple queries stay cheap and hard ones get full depth — and using output_config json_schema makes the label reliable to parse. A wastes tokens and latency by forcing trivial lookups through the heavy orchestrator. B underserves the deep multi-source questions that genuinely need tools and synthesis, sacrificing quality. C runs both paths every time, which is even more expensive than A and defeats the cost goal entirely."
+  },
+  {
+    "id": "support-q24",
+    "unitKind": "scenario",
+    "unitKey": "support",
+    "domainKey": "agentic",
+    "scenarioKey": "support",
+    "topic": "evaluator-optimizer pattern",
+    "difficulty": "hard",
+    "scenario": "A Customer Support Resolution Agent built on claude-sonnet-4-6 must draft refund replies that satisfy explicit quality criteria: cite the correct policy section, include the exact refund window, maintain an empathetic tone, and never promise an exception that policy forbids. Compliance requires that replies failing any criterion are revised before being sent, but the team also wants bounded, predictable iteration.",
+    "stem": "Which orchestration design best meets these requirements?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Make a single generator call with a detailed system prompt listing all criteria, then send whatever it produces, trusting that the instructions alone guarantee compliance on the first draft."
+      },
+      {
+        "id": "B",
+        "text": "Let one agent loop autonomously, re-drafting over and over with no separate scoring step, and stop only when the draft text contains the phrase 'FINAL ANSWER' so the loop ends itself."
+      },
+      {
+        "id": "C",
+        "text": "Run two generator calls in parallel and concatenate their outputs into one combined reply, assuming that averaging two drafts will satisfy all the criteria."
+      },
+      {
+        "id": "D",
+        "text": "Use an evaluator-optimizer loop: a generator drafts the reply, a separate evaluator call scores it against each explicit criterion (e.g., via a json_schema structured output of pass/fail plus feedback), and on failure the feedback is fed back to the generator for revision, capped at a fixed maximum number of iterations."
+      }
+    ],
+    "correctOptionId": "D",
+    "explanation": "D is the evaluator-optimizer pattern: a distinct evaluator scores the draft against the explicit, checkable criteria and returns structured feedback that drives bounded re-generation, which is exactly the documented fit when quality criteria are clear and revisions measurably improve the output. A is a single call with no verification, so a non-compliant first draft ships unchecked. B is unbounded autonomous looping with no evaluator, and detecting completion by text-parsing for 'FINAL ANSWER' is unreliable — completion should be controlled by the orchestration/stop_reason, not by parsing content. C parallelizes generation without any evaluation against the criteria, and merging two drafts does not enforce policy compliance."
+  },
+  {
+    "id": "cicd-q16",
+    "unitKind": "scenario",
+    "unitKey": "cicd",
+    "domainKey": "agentic",
+    "scenarioKey": "cicd",
+    "topic": "Structured Error Propagation",
+    "difficulty": "medium",
+    "scenario": "A multi-step CI agent built on Claude Code runs in headless mode (claude -p) to lint, build, then deploy a service. During the build step, the client-side 'compile' tool exits with a non-zero status because a dependency artifact is permanently missing from the registry — an irrecoverable failure for this run. A coordinator agent orchestrates the steps and decides whether to proceed.",
+    "stem": "What is the correct reliability behavior for the build step's tool result and the coordinator's response?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Return the tool_result with is_error omitted and synthesize a plausible build artifact path so the deploy step can continue, treating the missing dependency as a soft warning."
+      },
+      {
+        "id": "B",
+        "text": "Swallow the failure inside the build sub-agent, log nothing structured, and emit stop_reason end_turn so the coordinator reads it as a successful completion."
+      },
+      {
+        "id": "C",
+        "text": "Loop the compile tool call indefinitely with no backoff or cap, since retrying is always safe and the registry artifact may eventually appear."
+      },
+      {
+        "id": "D",
+        "text": "Return the tool_result with is_error:true carrying a structured error (what failed, which step, and recoverable:false), and have the coordinator stop the pipeline and escalate rather than proceeding to deploy."
+      }
+    ],
+    "correctOptionId": "D",
+    "explanation": "D is correct: tool failures are signaled via is_error:true on the tool_result, and a well-structured error payload (failure cause, location, recoverability) lets the coordinator make an informed stop/escalate decision instead of deploying a broken build. A is wrong because fabricating an artifact path silently propagates a false success and corrupts downstream deploy logic. B is wrong because swallowing the error and faking end_turn hides a real failure — and you should never infer success by overloading completion signals. C is wrong because blindly retrying an irrecoverable (recoverable:false) failure forever wastes resources and never escalates; retries need caps/backoff and only apply to transient errors."
+  },
+  {
+    "id": "extraction-q22",
+    "unitKind": "scenario",
+    "unitKey": "extraction",
+    "domainKey": "agentic",
+    "scenarioKey": "extraction",
+    "topic": "Dynamic planning vs chaining",
+    "difficulty": "hard",
+    "scenario": "Your team ingests vendor documents that arrive in wildly inconsistent forms: some are clean PDFs with tables, some are scanned images needing OCR, some embed the key fields in free-text emails, and some require following an embedded link to fetch a supplementary spreadsheet before any fields are even present. The number and order of extraction steps depends entirely on what each document turns out to contain, and the final output must conform to a fixed JSON schema.",
+    "stem": "Which orchestration design is most appropriate for reliably extracting the structured records?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Build a fixed prompt chain with hardcoded stages (OCR -> table parse -> link fetch -> field map -> validate) and run every document through all stages in that exact order."
+      },
+      {
+        "id": "B",
+        "text": "Use a single one-shot call with output_config json_schema and rely on parsing the model's text output to decide whether more work is needed before re-sending the document."
+      },
+      {
+        "id": "C",
+        "text": "Predefine a static branch tree covering the document types you've seen so far, routing each input down a fixed path with no ability to discover or revisit steps at runtime."
+      },
+      {
+        "id": "D",
+        "text": "Run an agentic loop where the model plans and replans at runtime, choosing tools (e.g., web_fetch, code_execution, client OCR) per document and iterating until done, driving turns off stop_reason (tool_use vs end_turn) and emitting the final record via output_config json_schema."
+      }
+    ],
+    "correctOptionId": "D",
+    "explanation": "D is correct because the step count and order are input-dependent and unknowable up front, which is exactly when agent autonomy—plan, act via tools, observe results, and replan—beats any static pipeline; loop control comes from stop_reason (tool_use to continue, end_turn to finish) and the schema is enforced with output_config json_schema. A is wrong because a fixed chain forces irrelevant stages on every document and cannot handle paths it didn't anticipate; predefined chaining is only right when steps are known and stable. C is wrong for the same reason at finer grain: a frozen branch tree can't discover or revisit steps for messy, novel inputs. B is wrong because a single one-shot call can't perform multi-step tool work, and detecting 'more work needed' by text-parsing content is an anti-pattern—completion must be judged from stop_reason, not parsed prose."
+  },
+  {
+    "id": "extraction-q23",
+    "unitKind": "scenario",
+    "unitKey": "extraction",
+    "domainKey": "prompt",
+    "scenarioKey": "extraction",
+    "topic": "Constrained decoding limits",
+    "difficulty": "hard",
+    "scenario": "A team extracts invoice line items into a fixed JSON shape using claude-sonnet-4-6 with output_config.format set to a json_schema (constrained decoding). They want to know exactly what the feature guarantees before they decide whether to keep their downstream validation layer.",
+    "stem": "Which statement most accurately describes the guarantees and limits of constrained decoding via output_config.format with a json_schema?",
+    "options": [
+      {
+        "id": "A",
+        "text": "It enforces structural validity for supported schema features (types, enum, $ref), but recursive schemas and numeric/length constraints aren't enforced, and a refusal stop_reason or max_tokens truncation can still produce non-conforming output — so keeping a validation layer is still warranted."
+      },
+      {
+        "id": "B",
+        "text": "It guarantees the extracted values are business-correct (e.g., totals match line items), so the downstream validation layer can be safely removed."
+      },
+      {
+        "id": "C",
+        "text": "It only works if you also set the deprecated output_format parameter alongside output_config.format; otherwise the schema is ignored."
+      },
+      {
+        "id": "D",
+        "text": "Because constrained decoding cannot be truncated, you no longer need to check stop_reason — any returned content is always complete and schema-valid."
+      }
+    ],
+    "correctOptionId": "A",
+    "explanation": "A is correct: constrained decoding enforces structure for supported features but does not cover recursive schemas or numeric/length constraints, and truncation (max_tokens) or a refusal (HTTP 200 with empty/partial content) can yield non-conforming output, so validation remains warranted. B is wrong because constrained decoding governs shape, not semantic/business correctness like arithmetic totals. C is wrong because output_format is deprecated and is not required — output_config.format is the current mechanism. D is wrong because output can be cut off by max_tokens or interrupted by a refusal, so stop_reason must still be inspected and content can be incomplete."
+  },
+  {
+    "id": "research-q23",
+    "unitKind": "scenario",
+    "unitKey": "research",
+    "domainKey": "context",
+    "scenarioKey": "research",
+    "topic": "context-window overflow",
+    "difficulty": "medium",
+    "scenario": "A multi-agent research system spawns a synthesis agent on claude-haiku-4-5 that must combine 40 retrieved documents into one long turn. Some research batches are large enough to risk overflowing the model's context window, and the team wants reliable handling rather than corrupted or silently dropped inputs.",
+    "stem": "What is the correct approach to handling potential context-window overflow for this synthesis agent?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Assume every current Claude model has a flat 200K-token window and hard-cap each request's combined input at 200K before sending."
+      },
+      {
+        "id": "B",
+        "text": "Pre-check the request size with the token-counting API against Haiku 4.5's 200K window, and if a request still returns stop_reason \"model_context_window_exceeded,\" programmatically trim, summarize, or split the documents and retry."
+      },
+      {
+        "id": "C",
+        "text": "Send the full request and inspect the response text for phrases like \"too long\" or \"truncated\" to decide whether to retry with fewer documents."
+      },
+      {
+        "id": "D",
+        "text": "Silently truncate the document set to whatever fits, dropping the overflow tokens from the end so the request always succeeds."
+      }
+    ],
+    "correctOptionId": "B",
+    "explanation": "B is correct: proactively count tokens against the model's actual window (Haiku 4.5 is 200K) and react to the documented stop_reason \"model_context_window_exceeded\" by trimming/summarizing/splitting and retrying. A is wrong because not all models share a 200K window—current Opus/Sonnet/Fable default to 1M—so a universal flat cap is an incorrect assumption (it happens to match Haiku here, but the reasoning generalizes badly and ignores per-model windows). C is wrong because completion and error conditions must be detected via stop_reason, never by text-parsing content. D is wrong because silently dropping inputs corrupts the research synthesis and loses data without any signal."
   }
 ]

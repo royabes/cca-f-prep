@@ -70,9 +70,10 @@ app/            Next.js App Router pages (dashboard, study, practice, exam, revi
 app/api/tutor/  Claude-powered tutor route handler
 components/      UI: QuestionCard, PracticeSession, ExplainPanel, Nav, charts
 lib/            Domain model, readiness engine, SM-2, adaptive selection, exam scoring
-data/           Verified question bank (131 Qs), flashcards (50), lessons (5)
+data/           Verified question bank (195 Qs), flashcards (50), lessons (5)
+scripts/        Question-bank tooling: answer-key debias + research-driven generator (TDD-covered)
 ```
 
 ## Content provenance
 
-The question bank, flashcards, and lessons were authored and then **adversarially verified** against the real, documented behavior of Anthropic's tooling (Claude API, Agent SDK, Claude Code, MCP). This is an independent study aid and is **not affiliated with, endorsed by, or sponsored by Anthropic**. Always cross-check exam logistics against Anthropic's official exam guide.
+The question bank, flashcards, and lessons were authored and then **adversarially verified** against the real, documented behavior of Anthropic's tooling (Claude API, Agent SDK, Claude Code, MCP) — grounded in the **current** model family (e.g., assistant prefill is removed on 4.6+, 1M-token context windows, `output_config.format` structured outputs, the full `stop_reason` set). The bank was expanded against a researched competency map of all five domains, and every correct-answer position is balanced across A/B/C/D so the assessment can't be gamed. All questions are **original**; no third-party practice questions were copied. This is an independent study aid and is **not affiliated with, endorsed by, or sponsored by Anthropic**. Always cross-check exam logistics against Anthropic's official exam guide.

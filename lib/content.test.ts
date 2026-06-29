@@ -9,9 +9,9 @@ import type { DomainKey } from "./types";
 describe("shipped question bank", () => {
   const qs = CORPUS.questions;
 
-  it("has 131 questions with unique ids", () => {
-    expect(qs).toHaveLength(131);
-    expect(new Set(qs.map((q) => q.id)).size).toBe(131);
+  it("has 195 questions with unique ids", () => {
+    expect(qs).toHaveLength(195);
+    expect(new Set(qs.map((q) => q.id)).size).toBe(195);
   });
 
   it("every question is schema-valid", () => {
