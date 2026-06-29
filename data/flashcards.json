@@ -1,0 +1,302 @@
+[
+  {
+    "id": "agentic-f1",
+    "domainKey": "agentic",
+    "front": "What are the four phases of the agentic loop?",
+    "back": "Gather context -> take action (use tools) -> verify the work -> repeat until the task is verified complete or a stop condition fires."
+  },
+  {
+    "id": "agentic-f2",
+    "domainKey": "agentic",
+    "front": "Agent vs workflow: what's the core distinction?",
+    "back": "A workflow follows predefined code paths (deterministic, predictable, cheaper). An agent lets the model dynamically direct its own process and tool use (flexible, for open-ended tasks)."
+  },
+  {
+    "id": "agentic-f3",
+    "domainKey": "agentic",
+    "front": "What is the guiding principle for choosing agentic complexity?",
+    "back": "Prefer the simplest thing that works. Add agentic autonomy only when the task genuinely needs dynamic decisioning; otherwise use a workflow or single agent."
+  },
+  {
+    "id": "agentic-f4",
+    "domainKey": "agentic",
+    "front": "What is the main benefit of the orchestrator-subagent (hub-and-spoke) model?",
+    "back": "Context isolation: each subagent runs in its own context window and returns only its result, not its full transcript, keeping the orchestrator's context clean and focused."
+  },
+  {
+    "id": "agentic-f5",
+    "domainKey": "agentic",
+    "front": "When should subagents run in parallel vs sequentially?",
+    "back": "Parallel for independent sub-tasks with no shared state or ordering dependency; sequential (pipeline) when each stage's output feeds the next (data dependencies)."
+  },
+  {
+    "id": "agentic-f6",
+    "domainKey": "agentic",
+    "front": "Name the three multi-agent topologies and their use.",
+    "back": "Hub-and-spoke (central orchestrator delegates), pipeline (sequential stages feeding each other), peer-to-peer (agents communicate directly). Pick the least complex that fits."
+  },
+  {
+    "id": "agentic-f7",
+    "domainKey": "agentic",
+    "front": "What are lifecycle hooks and why use them?",
+    "back": "Deterministic code callbacks at events like PreToolUse, PostToolUse, and Stop that enforce guardrails/policy in code rather than relying on the model to comply."
+  },
+  {
+    "id": "agentic-f8",
+    "domainKey": "agentic",
+    "front": "In Claude Code hooks, what does exit code 2 do?",
+    "back": "Exit code 2 blocks the action and feeds stderr back to Claude so it can self-correct. 0 = success; other nonzero = non-blocking error."
+  },
+  {
+    "id": "agentic-f9",
+    "domainKey": "agentic",
+    "front": "How should an agent handle ambiguity or low confidence on high-stakes tasks?",
+    "back": "Ask a clarifying question or escalate to a human rather than guessing; propagate errors explicitly instead of silently swallowing them."
+  },
+  {
+    "id": "agentic-f10",
+    "domainKey": "agentic",
+    "front": "What is the Agent SDK and what is it for?",
+    "back": "claude-agent-sdk (formerly claude-code-sdk) builds agents around the agentic loop, supporting isolated-context subagents, orchestrator patterns, and resumable session management."
+  },
+  {
+    "id": "claudecode-f1",
+    "domainKey": "claudecode",
+    "front": "CLAUDE.md precedence order (highest to lowest authority)?",
+    "back": "Enterprise/policy -> user (~/.claude/CLAUDE.md) -> project (./CLAUDE.md) -> project-local. Files combine; more specific overrides more general, but enterprise policy beats everything."
+  },
+  {
+    "id": "claudecode-f2",
+    "domainKey": "claudecode",
+    "front": "In a direct conflict, does the user-level or project-level CLAUDE.md win?",
+    "back": "Project-level wins — it is more specific than the user file. (Enterprise policy still overrides both.)"
+  },
+  {
+    "id": "claudecode-f3",
+    "domainKey": "claudecode",
+    "front": "Hook exit codes: what do 0, 2, and other nonzero mean?",
+    "back": "0 = success (non-blocking). 2 = block the action and feed stderr back to Claude to self-correct. Other nonzero = non-blocking error."
+  },
+  {
+    "id": "claudecode-f4",
+    "domainKey": "claudecode",
+    "front": "Which hook event blocks a tool call before it runs, and which fires at turn completion?",
+    "back": "PreToolUse runs before a tool (use it to block). PostToolUse runs after (use it to format/validate). Stop fires when Claude finishes the turn (use it for completion guardrails/notifications)."
+  },
+  {
+    "id": "claudecode-f5",
+    "domainKey": "claudecode",
+    "front": "What is the single biggest driver of whether a Skill is selected?",
+    "back": "Its YAML `description` — Skills trigger by description match. Make it specific and keyword-rich; keep it concise (don't inline content)."
+  },
+  {
+    "id": "claudecode-f6",
+    "domainKey": "claudecode",
+    "front": "What is progressive disclosure in Skills?",
+    "back": "Keep SKILL.md lean (description + high-level steps) and load detailed reference material only when the Skill is actually needed, so context stays small until depth is required."
+  },
+  {
+    "id": "claudecode-f7",
+    "domainKey": "claudecode",
+    "front": "Where are subagents defined, and what makes them avoid polluting the orchestrator's context?",
+    "back": "In .claude/agents/ — each has its own prompt, own tool allowlist, and its own ISOLATED context window. Only the subagent's final result returns to the orchestrator."
+  },
+  {
+    "id": "claudecode-f8",
+    "domainKey": "claudecode",
+    "front": "Where do custom slash commands live, and how are they triggered?",
+    "back": "Markdown files in .claude/commands/ (e.g. commitmsg.md -> /commitmsg). They are explicitly USER-invoked, unlike Skills which auto-trigger by description."
+  },
+  {
+    "id": "claudecode-f9",
+    "domainKey": "claudecode",
+    "front": "What does .claudeignore control?",
+    "back": "Which files Claude can access — used to exclude secrets and bulky vendor directories from reads and context. It is deterministic access control, not a model instruction."
+  },
+  {
+    "id": "claudecode-f10",
+    "domainKey": "claudecode",
+    "front": "How do you run Claude Code non-interactively in CI with machine-parseable output?",
+    "back": "claude -p \"prompt\" --output-format json — headless mode for scripting/CI, piping JSON to downstream steps (e.g. jq)."
+  },
+  {
+    "id": "prompt-f1",
+    "domainKey": "prompt",
+    "front": "What is the recommended way to get reliable structured/JSON output from Claude?",
+    "back": "Define a tool with an input_json_schema (tool_use). The model returns a tool_use block whose input conforms to the schema. This is more robust than asking for raw JSON in the text."
+  },
+  {
+    "id": "prompt-f2",
+    "domainKey": "prompt",
+    "front": "What is a validation-retry loop?",
+    "back": "Validate the model's structured output in code; on failure, feed the specific validation error back to the model and ask it to correct, retrying until it conforms. Never silently accept or drop bad output."
+  },
+  {
+    "id": "prompt-f3",
+    "domainKey": "prompt",
+    "front": "What does 'lost in the middle' mean for prompt design?",
+    "back": "Models attend best to the start and end of long context and worst to the middle. Place the most important instructions/data at the edges of the prompt."
+  },
+  {
+    "id": "prompt-f4",
+    "domainKey": "prompt",
+    "front": "For extraction over a long document, where do you put the document and the query?",
+    "back": "Put the long document BEFORE the query, and ask the model to quote the relevant parts first, then answer. This grounds the answer and reduces hallucination."
+  },
+  {
+    "id": "prompt-f5",
+    "domainKey": "prompt",
+    "front": "What does prefilling the assistant turn accomplish?",
+    "back": "It steers the output format (e.g., prefill '{' to push toward JSON). It only steers — it does not validate or guarantee conformance."
+  },
+  {
+    "id": "prompt-f6",
+    "domainKey": "prompt",
+    "front": "When should you use multi-pass / self-critique (generate → critique → revise)?",
+    "back": "For high-stakes output where accuracy matters more than cost/latency. A separate review pass catches errors the first pass missed; it is wasteful as a blanket default."
+  },
+  {
+    "id": "prompt-f7",
+    "domainKey": "prompt",
+    "front": "Why use XML tags in prompts?",
+    "back": "They delimit and label distinct context pieces (document, instructions, examples), removing ambiguity about what is data versus instruction and improving structure/parsing."
+  },
+  {
+    "id": "prompt-f8",
+    "domainKey": "prompt",
+    "front": "What makes a good JSON schema for tool_use output?",
+    "back": "Tight and specific: required fields, enums for closed sets, precise types. Loose schemas invite malformed or inconsistent output."
+  },
+  {
+    "id": "prompt-f9",
+    "domainKey": "prompt",
+    "front": "What is the role of few-shot example selection?",
+    "back": "Provide examples that cover edge cases and mirror the real distribution, demonstrating the exact format desired. Well-chosen examples often outperform long prose descriptions."
+  },
+  {
+    "id": "prompt-f10",
+    "domainKey": "prompt",
+    "front": "Why separate chain-of-thought reasoning from the final structured answer?",
+    "back": "Letting the model reason step-by-step improves hard-task accuracy, but the reasoning should be kept out of the parsed output (e.g., in a <thinking> tag) so it doesn't pollute the structured result."
+  },
+  {
+    "id": "tools-f1",
+    "domainKey": "tools",
+    "front": "What is the single biggest driver of correct tool selection by the model?",
+    "back": "The tool's description. A clear, precise description of what the tool does and when to use it matters more than the name or the schema for getting the model to choose the right tool."
+  },
+  {
+    "id": "tools-f2",
+    "domainKey": "tools",
+    "front": "How should an MCP tool report a bad input or failure?",
+    "back": "Return a structured error: set isError and include an actionable message telling the model how to fix the call, so it can self-correct in a retry loop rather than throwing an exception."
+  },
+  {
+    "id": "tools-f3",
+    "domainKey": "tools",
+    "front": "What are the three primitives an MCP server exposes, and who controls each?",
+    "back": "Tools (model-invoked actions), Resources (application-controlled context data like files), and Prompts (user-invoked templates)."
+  },
+  {
+    "id": "tools-f4",
+    "domainKey": "tools",
+    "front": "stdio vs streamable HTTP/SSE transport in MCP — when do you use each?",
+    "back": "stdio runs the server as a local subprocess (single machine, local tooling). HTTP/SSE is for remote/hosted servers reached over the network and shared across clients."
+  },
+  {
+    "id": "tools-f5",
+    "domainKey": "tools",
+    "front": "Why is consolidating overlapping tools important?",
+    "back": "Too many tools, or several that do nearly the same thing, degrade selection accuracy because the model wastes reasoning disambiguating. Fewer, well-described, distinct tools select more reliably."
+  },
+  {
+    "id": "tools-f6",
+    "domainKey": "tools",
+    "front": "What does 'least privilege' mean for tool scoping?",
+    "back": "Give each agent or subagent only the tools it actually needs for its task (e.g., no write/delete tools for a read-only research agent), limiting blast radius and reducing selection confusion."
+  },
+  {
+    "id": "tools-f7",
+    "domainKey": "tools",
+    "front": "How is structured output produced from Claude?",
+    "back": "Via tool_use: define a tool with an input_json_schema; the model returns a tool_use block whose input conforms to that schema. Add a validation-retry loop, feeding errors back on failure."
+  },
+  {
+    "id": "tools-f8",
+    "domainKey": "tools",
+    "front": "What architecture does MCP use, and is it open?",
+    "back": "MCP is an open standard with a client-server architecture. A host's MCP client connects to MCP servers that expose tools, resources, and prompts."
+  },
+  {
+    "id": "tools-f9",
+    "domainKey": "tools",
+    "front": "What makes a good tool input schema?",
+    "back": "A tight JSON schema: required fields, enums for fixed choices, clear types and units, and no ambiguous free-form blobs — constraining the model toward valid, well-formed calls."
+  },
+  {
+    "id": "tools-f10",
+    "domainKey": "tools",
+    "front": "Why distribute a single well-designed MCP server instead of many ad hoc tools?",
+    "back": "A consolidated, well-documented server can be reused across many clients (distribution). Sprawling, overlapping tools are hard to reuse and degrade the model's tool selection."
+  },
+  {
+    "id": "context-f1",
+    "domainKey": "context",
+    "front": "What is the standard context window size for Claude models?",
+    "back": "200K tokens (standard). All inputs — system prompt, tools, retrieved docs, history — and the output share this budget."
+  },
+  {
+    "id": "context-f2",
+    "domainKey": "context",
+    "front": "What is the 'lost in the middle' effect and how do you counter it?",
+    "back": "Models attend best to the start and end of long context and worst to the middle. Place the most important instructions/data at the edges, not buried in the middle."
+  },
+  {
+    "id": "context-f3",
+    "domainKey": "context",
+    "front": "What is the RAG retrieval pipeline?",
+    "back": "Chunk the corpus → embed each chunk → store in a vector DB → at query time retrieve by semantic (embedding) similarity. Retrieve only what's relevant instead of stuffing everything."
+  },
+  {
+    "id": "context-f4",
+    "domainKey": "context",
+    "front": "Semantic search vs BM25 vs hybrid?",
+    "back": "Semantic (embeddings) matches meaning/paraphrase; BM25 is lexical/keyword matching (great for exact terms, IDs, rare tokens); hybrid combines both, often reranked, for best recall + precision."
+  },
+  {
+    "id": "context-f5",
+    "domainKey": "context",
+    "front": "How does prompt caching pricing and TTL work?",
+    "back": "Mark a stable prefix with cache_control (ephemeral). Cache reads cost ~10% of base input tokens, with a 5-minute TTL that refreshes on each use."
+  },
+  {
+    "id": "context-f6",
+    "domainKey": "context",
+    "front": "How should you order content to maximize prompt caching?",
+    "back": "Order content stable → variable: put the fixed prefix (system prompt, tools, reference docs) first and the changing user query last, so the cacheable prefix is as large as possible."
+  },
+  {
+    "id": "context-f7",
+    "domainKey": "context",
+    "front": "When should you use the Batch API?",
+    "back": "For bulk, non-latency-sensitive jobs. It is asynchronous and ~50% cheaper than synchronous calls. It cuts cost, not latency — never use it for interactive paths."
+  },
+  {
+    "id": "context-f8",
+    "domainKey": "context",
+    "front": "Why is progressive summarization risky?",
+    "back": "Each summarization pass loses detail and provenance, which can silently corrupt facts that must stay exact (numbers, names, legal text). Keep source references and retrieve the source instead."
+  },
+  {
+    "id": "context-f9",
+    "domainKey": "context",
+    "front": "What does 'preserve provenance' mean in context management?",
+    "back": "Keep source references so any claim can be traced back to its origin, rather than trusting a lossy summary. Critical when exactness matters."
+  },
+  {
+    "id": "context-f10",
+    "domainKey": "context",
+    "front": "Name three core reliability patterns for agentic systems.",
+    "back": "Escalate to a human on low confidence / high stakes; propagate errors explicitly instead of swallowing them; verify tool outputs and design clear handoffs between agents."
+  }
+]
