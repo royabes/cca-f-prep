@@ -33,6 +33,19 @@ export default function ExamPage() {
   const [scored, setScored] = useState<ScoredExam | null>(null);
   const startRef = useRef(0);
   const durationMsRef = useRef(settings.examMinutes * 60 * 1000);
+  const answersRef = useRef<Record<string, Choice>>({});
+  const questionsRef = useRef<Question[]>([]);
+
+  // Mirror answers/questions into refs so the countdown's auto-submit always
+  // scores the LATEST selections. The timer effect captures finish() once (at the
+  // render where the exam starts, when answers is still empty), so reading the
+  // answers state directly from that closure would score against an empty set.
+  useEffect(() => {
+    answersRef.current = answers;
+  }, [answers]);
+  useEffect(() => {
+    questionsRef.current = questions;
+  }, [questions]);
 
   // Countdown timer.
   useEffect(() => {
@@ -70,15 +83,17 @@ export default function ExamPage() {
     setPhase((p) => {
       if (p !== "running") return p; // guard against double-fire from timer
       const now = Date.now();
-      const sc = scoreExam(questions, answers);
+      const qs = questionsRef.current;
+      const ans = answersRef.current;
+      const sc = scoreExam(qs, ans);
       setScored(sc);
 
       // Record each question as a retrieval event + schedule misses for review.
       const recs: AnswerRecord[] = [];
       const cards = [];
       const state = load();
-      for (const q of questions) {
-        const chosen = answers[q.id] ?? null;
+      for (const q of qs) {
+        const chosen = ans[q.id] ?? null;
         const correct = chosen === q.correctOptionId;
         recs.push({
           questionId: q.id,

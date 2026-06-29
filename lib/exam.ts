@@ -1,10 +1,11 @@
 import type { Corpus, Question, DomainKey, ExamResult } from "./types";
 import { DOMAINS, EXAM } from "./domains";
+import type { Rng } from "./rng";
 
-export function shuffle<T>(arr: T[]): T[] {
+export function shuffle<T>(arr: T[], rng: Rng = Math.random): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(rng() * (i + 1));
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
@@ -30,7 +31,7 @@ export function domainQuota(count: number): Record<DomainKey, number> {
 
 // Build a blueprint-weighted mock exam, preferring scenario-anchored questions
 // (the real exam is scenario-driven) but filling from the full bank as needed.
-export function buildExam(corpus: Corpus, count = EXAM.questionCount): Question[] {
+export function buildExam(corpus: Corpus, count = EXAM.questionCount, rng: Rng = Math.random): Question[] {
   const quota = domainQuota(count);
   const picked: Question[] = [];
   const used = new Set<string>();
@@ -39,8 +40,8 @@ export function buildExam(corpus: Corpus, count = EXAM.questionCount): Question[
     const need = quota[d.key];
     const pool = corpus.questions.filter((q) => q.domainKey === d.key);
     const scenarioFirst = [
-      ...shuffle(pool.filter((q) => q.unitKind === "scenario")),
-      ...shuffle(pool.filter((q) => q.unitKind === "domain")),
+      ...shuffle(pool.filter((q) => q.unitKind === "scenario"), rng),
+      ...shuffle(pool.filter((q) => q.unitKind === "domain"), rng),
     ];
     for (const q of scenarioFirst) {
       if (picked.filter((p) => p.domainKey === d.key).length >= need) break;
@@ -52,7 +53,7 @@ export function buildExam(corpus: Corpus, count = EXAM.questionCount): Question[
 
   // If a domain was short on questions, top up from anywhere to reach count.
   if (picked.length < count) {
-    for (const q of shuffle(corpus.questions)) {
+    for (const q of shuffle(corpus.questions, rng)) {
       if (picked.length >= count) break;
       if (used.has(q.id)) continue;
       used.add(q.id);
@@ -60,7 +61,7 @@ export function buildExam(corpus: Corpus, count = EXAM.questionCount): Question[
     }
   }
 
-  return shuffle(picked).slice(0, count);
+  return shuffle(picked, rng).slice(0, count);
 }
 
 export function scaledFromRaw(rawFraction: number): number {

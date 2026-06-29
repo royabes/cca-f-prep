@@ -9,6 +9,7 @@ import type {
 } from "./types";
 import { DOMAINS } from "./domains";
 import { shuffle } from "./exam";
+import type { Rng } from "./rng";
 
 // Difficulty preference ordering by learner level. Earlier = preferred.
 const LEVEL_DIFF_ORDER: Record<UserLevel, Difficulty[]> = {
@@ -71,6 +72,7 @@ export interface AdaptiveOpts {
   answers: AnswerRecord[];
   srs: Record<string, SrsState>;
   now: number;
+  rng?: Rng;
 }
 
 // Diagnose→prescribe selection: weight toward weak/over-confident domains,
@@ -78,6 +80,7 @@ export interface AdaptiveOpts {
 // and interleave domains in the final order.
 export function selectAdaptive(corpus: Corpus, opts: AdaptiveOpts): Question[] {
   const { count, level, answers, srs, now } = opts;
+  const rng = opts.rng ?? Math.random;
   const stats = buildStats(answers);
   const dueIds = new Set(
     Object.values(srs)
@@ -118,7 +121,7 @@ export function selectAdaptive(corpus: Corpus, opts: AdaptiveOpts): Question[] {
       .sort((x, y) => y.p - x.p);
     // Take from the top of the priority list, with light randomization among ties.
     const top = pool.slice(0, a.n * 2);
-    for (const { q } of shuffle(top).slice(0, a.n)) {
+    for (const { q } of shuffle(top, rng).slice(0, a.n)) {
       if (used.has(q.id)) continue;
       used.add(q.id);
       chosen.push(q);
@@ -139,17 +142,19 @@ export function selectAdaptive(corpus: Corpus, opts: AdaptiveOpts): Question[] {
   }
 
   // Interleave domains: round-robin by domain rather than grouped blocks.
-  return interleaveByDomain(chosen).slice(0, count);
+  return interleaveByDomain(chosen, rng).slice(0, count);
 }
 
-function interleaveByDomain(qs: Question[]): Question[] {
+export function interleaveByDomain(qs: Question[], rng: Rng = Math.random): Question[] {
   const byDomain = new Map<DomainKey, Question[]>();
   for (const q of qs) {
     const arr = byDomain.get(q.domainKey) || [];
     arr.push(q);
     byDomain.set(q.domainKey, arr);
   }
-  for (const arr of byDomain.values()) shuffle(arr);
+  // Shuffle each domain's queue in place. (shuffle() returns a new array, so the
+  // result must be written back — discarding it was a silent no-op.)
+  for (const [key, arr] of byDomain) byDomain.set(key, shuffle(arr, rng));
   const queues = [...byDomain.values()];
   const out: Question[] = [];
   let added = true;
