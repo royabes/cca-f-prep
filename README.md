@@ -12,6 +12,8 @@ It combines four study modes the learning-science literature ranks highest, wrap
 
 A **readiness dashboard** ties it together: it diagnoses per-domain mastery, detects "confident-but-wrong" danger zones, blends your mastery with recent mock scores into a pass-probability, and **prescribes** what to study next.
 
+> 📘 **Preparing to sit the exam?** Read **[EXAM-PREP.md](EXAM-PREP.md)** — a week-by-week study plan tied to this app, time/scoring strategy, per-domain high-yield topics, the current-model "stale-knowledge" traps the exam exploits, and an exam-day checklist.
+
 ## The exam (blueprint this app targets)
 
 | Domain | Weight |

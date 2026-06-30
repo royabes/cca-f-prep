@@ -896,7 +896,7 @@
       }
     ],
     "correctOptionId": "C",
-    "explanation": "C is correct: the recommended path for structured output is tool_use with an input_json_schema, which constrains the model to return a conforming input object instead of free text. B is a prompt band-aid that does not constrain shape and still produces stray text. A reduces variation but does not enforce a schema or eliminate preambles/fences. D changes how jobs are dispatched (async/cheaper) but does nothing about output format."
+    "explanation": "C is correct as the best of the offered options: defining a tool with an input_json_schema and having the model return a tool_use block whose input conforms to that schema does constrain output shape rather than relying on prose instructions. Note, however, that tool_use-for-JSON is now the older (still valid) pattern; the CURRENT preferred mechanism is output_config.format with type \"json_schema\" (constrained decoding), with strict:true tool use also a fully supported current approach. B is a prompt band-aid that does not constrain shape and still produces stray text. A reduces variation but does not enforce a schema or eliminate preambles/fences, and D only changes how jobs are dispatched (async/cheaper) while doing nothing about output format."
   },
   {
     "id": "prompt-q2",
@@ -997,30 +997,30 @@
     "unitKey": "prompt",
     "domainKey": "prompt",
     "scenarioKey": null,
-    "topic": "prefilling",
+    "topic": "Output format control on the 4.6+ family: output_config.format json_schema / strict tool use vs. removed assistant prefill",
     "difficulty": "medium",
-    "scenario": "A teammate wants every response to begin as a JSON object and proposes prefilling the assistant turn with an opening '{'. They then argue that because of the prefill, you can delete the JSON-validation step entirely.",
+    "scenario": "Your service runs on claude-sonnet-4-6 and must emit a strict JSON object on every response. A teammate proposes prefilling the assistant turn with an opening '{' to force JSON, and argues that with the prefill in place you can delete the downstream JSON-validation step.",
     "stem": "How should you evaluate this proposal?",
     "options": [
       {
         "id": "A",
-        "text": "Prefilling guarantees valid JSON, so removing validation is safe"
+        "text": "Prefilling the assistant turn with '{' reliably forces JSON and removes the need for validation"
       },
       {
         "id": "B",
-        "text": "Prefilling only works with plain-text generation and cannot be combined with a tool_use schema, so it is the wrong tool here"
+        "text": "Combine the '{' prefill with output_config.format json_schema so the prefill seeds the schema and validation can be dropped"
       },
       {
         "id": "C",
-        "text": "Prefilling usefully steers the output toward JSON, but it does not guarantee conformance, so the validation step must stay"
+        "text": "Don't prefill — it returns HTTP 400 on the 4.6+ family; instead set output_config.format:{type:\"json_schema\"} (or strict tool use) plus system-prompt instructions, which actually constrains the output"
       },
       {
         "id": "D",
-        "text": "Prefilling and tool_use are mutually exclusive, so adopting prefill means abandoning the schema"
+        "text": "Keep prefilling but cap the schema enforcement by switching tool_choice to none so the model free-generates the object"
       }
     ],
     "correctOptionId": "C",
-    "explanation": "C is correct: prefilling steers format but provides no validity guarantee, so you keep validation. A overstates prefill's power. B is a plausible-sounding but false constraint — prefilling is a general format-steering technique and does not 'only work' with plain text. D invents a mutual-exclusivity rule; prefill is a steering technique that does not preclude using tool_use schemas."
+    "explanation": "C is correct: assistant prefill is removed on the 4.6+ family and returns HTTP 400, so on claude-sonnet-4-6 you must steer format via output_config.format json_schema (constrained decoding) or strict:true tool use, reinforced by system-prompt instructions. A is the stale belief — prefill no longer even works here, and even legacy prefill only steered, never guaranteed. B is wrong twice: the prefill request fails on 4.6+, and json_schema constrained decoding already guarantees conformance without any prefill (and you'd typically still keep validation as defense-in-depth). D both retains the rejected prefill and misuses tool_choice:none, which suppresses tool calls and removes the very schema enforcement you want."
   },
   {
     "id": "prompt-q6",
@@ -1175,7 +1175,7 @@
       }
     ],
     "correctOptionId": "A",
-    "explanation": "A separates chain-of-thought (in a thinking section) from the parsed structured answer (tool_use input), preserving reasoning benefits without polluting the output. D sacrifices accuracy unnecessarily. C deliberately mixes reasoning into the data field, the very corruption you are trying to avoid. B conflates determinism with reasoning ability; temperature 0 does not replace step-by-step reasoning."
+    "explanation": "A separates chain-of-thought (in a thinking section) from the parsed structured answer, preserving reasoning benefits without polluting the output, and remains a valid approach among the offered options. Note that the CURRENT preferred mechanism for structured output is output_config.format with a json_schema type (constrained decoding), with strict:true tool use also valid; the plain tool_use-with-schema pattern used in A is an older but still-functional approach. D sacrifices accuracy unnecessarily, and C deliberately mixes reasoning into the data field, the very corruption you are trying to avoid. B conflates determinism with reasoning ability; temperature 0 does not replace step-by-step reasoning."
   },
   {
     "id": "prompt-q11",
@@ -1268,7 +1268,7 @@
       }
     ],
     "correctOptionId": "A",
-    "explanation": "A is the recommended approach: a tool with input_json_schema constrains output to the exact (including nested) structure. B relies on instruction-following without enforcement and is less reliable for nested shapes. D adds avoidable reconstruction complexity and loses the schema's guarantees. C introduces a different format with no stated advantage and abandons the schema-backed tool_use path."
+    "explanation": "A is the best choice among the options offered: a tool with input_json_schema constrains the model's tool_use input to the exact (including nested) structure, making it far more reliable than prompt-only instructions. Note, however, that the CURRENT preferred mechanism for structured output is output_config.format with a json_schema (constrained decoding); strict:true tool use is also a valid current pattern, while plain tool_use-for-JSON like A is the older but still-working approach. B relies on instruction-following without enforcement and is less reliable for nested shapes. D adds avoidable reconstruction complexity and loses the schema's guarantees, and C introduces a different format with no stated advantage while abandoning schema-backed enforcement entirely."
   },
   {
     "id": "prompt-q14",
@@ -1857,7 +1857,7 @@
       }
     ],
     "correctOptionId": "D",
-    "explanation": "Hybrid search combines semantic (meaning/paraphrase) with BM25 (exact lexical matches like error codes and flags), typically reranked, giving the best recall + precision. B would fix exact-token recall but regress on conceptual queries. C keeps the same lexical blind spot — bigger embeddings still don't reliably match rare exact tokens. A wastes the budget, raises cost, and invites lost-in-the-middle errors."
+    "explanation": "Hybrid search combines semantic (meaning/paraphrase) with BM25 (exact lexical matches like error codes and flags), typically reranked, giving the best recall + precision — so D is correct. B would fix exact-token recall but regress on conceptual queries. C keeps the same lexical blind spot — bigger embeddings still don't reliably match rare exact tokens. A wastes the context budget (note A's \"200K\" is not universal — Opus/Sonnet/Fable default to 1M while Haiku 4.5 is 200K), raises cost, and invites lost-in-the-middle errors."
   },
   {
     "id": "context-q4",
@@ -2353,7 +2353,7 @@
       }
     ],
     "correctOptionId": "A",
-    "explanation": "Structured output is best achieved via tool_use: define a tool with an input_json_schema and the model returns a tool_use block whose input conforms, then wrap it in a validation-retry loop that validates the JSON and, on failure, feeds the error back asking for correction. Option A combines both. C raising temperature makes format adherence worse, not better. B regex-repairing free-form prose is brittle and never fully reliable. D stating the schema once in the prose system prompt is exactly the current failing approach and provides no schema-enforced channel or retry on failure."
+    "explanation": "Among the offered options, A is the most reliable: define a tool with an input JSON schema so the model returns a tool_use block conforming to it, and wrap it in a validation-retry loop that feeds any validation error back for correction. Note that tool_use-for-JSON is no longer the canonical mechanism — the CURRENT preferred approach is output_config.format with {type:\"json_schema\"} (constrained decoding), with strict:true tool use also valid; plain schema-shaped tool use is the older but still-working pattern, which is why A remains a sound choice here. C raising temperature makes format adherence worse, not better. B regex-repairing free-form prose is brittle and never fully reliable, and D stating the schema once in the prose system prompt is exactly the current failing approach, providing no schema-enforced channel or retry on failure."
   },
   {
     "id": "support-q6",
@@ -2663,7 +2663,7 @@
       }
     ],
     "correctOptionId": "A",
-    "explanation": "The recommended way to get structured output from Claude is tool_use: define a tool with an input_json_schema, and the model returns a tool_use block whose input conforms to that schema, eliminating prose/fence wrapping. A is correct. D is wrong and counterproductive: higher temperature increases format variability, the opposite of reliability. C is a plausible-sounding trap, but a prompt instruction does not GUARANTEE conformance and the API does not strip surrounding text; the model can still add prose. B confuses cost/latency with format: the Batch API is just asynchronous, ~50% cheaper bulk processing; it does not change output structure or validate JSON. (Pairing tool_use with a validate-and-retry loop further hardens it.)"
+    "explanation": "Among the offered options, A is the correct choice: defining a tool with an input_json_schema makes the model return a tool_use block whose input conforms to that schema, eliminating prose/fence wrapping for the downstream parser. Note that A is no longer THE canonical mechanism—the current preferred approach for structured output is output_config.format with a json_schema type (constrained decoding), with strict:true tool use also valid; plain schema-tool-use like A remains a valid, well-supported pattern but is the older approach. D is wrong and counterproductive: higher temperature increases format variability, the opposite of reliability. C is a plausible-sounding trap, but a prompt instruction does not GUARANTEE conformance and the API does not strip surrounding text—the model can still add prose. B confuses cost/latency with format: the Batch API is just asynchronous, ~50% cheaper bulk processing, and does not change output structure or validate JSON. (Pairing any of these with a validate-and-retry loop further hardens it.)"
   },
   {
     "id": "codegen-q6",
@@ -2973,7 +2973,7 @@
       }
     ],
     "correctOptionId": "C",
-    "explanation": "Correct: C. The recommended path to reliable structured output is tool_use with a defined input_json_schema: the model returns a tool_use block whose input conforms to the schema, and you wrap it in a validation-retry loop — on a schema-validation failure you feed the error back and ask for a correction. This gives you machine-checkable structure plus self-healing. D (a prose instruction to 'use JSON') is the weak version — it nudges but provides no schema enforcement or retry, so malformed output still slips through. A is a misconception: temperature 0 reduces variance but does not guarantee parseable structure, and regex parsing of free prose is brittle by nature. B is wrong on the facts: Markdown tables are not stricter than a JSON schema and absolutely do vary; they offer no validation contract for confidence scores or nested fields."
+    "explanation": "Correct: C. Among the offered options, C is the only one that gives machine-checkable structure with self-healing: each subagent returns a tool_use block whose input conforms to a defined input_json_schema, wrapped in a validation-retry loop that feeds schema errors back for correction. Note that tool_use-for-JSON is now the OLDER (still valid) pattern; the CURRENT preferred mechanism for structured output is output_config.format with type:\"json_schema\" (constrained decoding), with strict:true tool use also a current, fully-supported option — but neither appears among these choices, so C remains the best available answer. D (a prose 'use JSON' instruction) is the weak version: it nudges but provides no schema enforcement or retry, so malformed output still slips through. A is a misconception — temperature 0 reduces variance but does not guarantee parseable structure, and regex parsing of free prose is brittle; B is wrong on the facts, since Markdown tables are not stricter than a JSON schema, do vary between calls, and offer no validation contract for confidence scores or nested fields."
   },
   {
     "id": "research-q6",
@@ -3314,7 +3314,7 @@
       }
     ],
     "correctOptionId": "C",
-    "explanation": "The recommended pattern for reliable structured output is tool_use with a defined input_json_schema (the model returns a tool_use block whose input conforms to the schema), paired with a validation-retry loop: validate the JSON and, on failure, feed the error back and ask the model to correct it. This both constrains the shape and provides a recovery path. A relies purely on prompt compliance, which the scenario already shows is unreliable. B reduces variance but does nothing structural; a regex over free text is brittle and still admits out-of-enum values. D violates the reliability principle of propagating errors explicitly rather than silently swallowing them; dropping PRs hides failures and corrupts the report."
+    "explanation": "Among the offered options, C is best: defining a tool with an input_json_schema and requiring a tool_use response constrains the output shape, and pairing it with a validation-retry loop (validate the JSON and, on failure, feed the error back for correction) provides a recovery path. Note that schema-constrained tool use is no longer the single canonical mechanism — the CURRENT preferred approach for structured output is output_config.format with type \"json_schema\" (constrained decoding), with strict:true tool use also valid; plain tool_use-for-JSON is the older but still-working pattern, and C remains the strongest of the choices listed here. A relies purely on prompt compliance, which the scenario already shows is unreliable. B reduces variance but does nothing structural; a regex over free text is brittle and still admits out-of-enum values. D violates the reliability principle of propagating errors explicitly rather than silently swallowing them; dropping PRs hides failures and corrupts the report."
   },
   {
     "id": "devprod-q7",
@@ -3593,7 +3593,7 @@
       }
     ],
     "correctOptionId": "B",
-    "explanation": "The recommended pattern for structured output is tool_use with an input_json_schema (the tool_use input is constrained to conform to the schema), backed by a validation-retry loop: validate the JSON, and on failure feed the specific error back and ask for correction. B captures both the schema-constrained generation and the self-correcting loop. C is a weaker version of the right idea — a plain instruction helps but gives no schema enforcement and no recovery path when it slips, which is exactly the failure being described. D is backwards: higher temperature increases output variance, making schema drift worse, not better. A treats the symptom with a brittle regex that still fails on the near-miss schemas and missing fields that the validation step is meant to catch."
+    "explanation": "Among the offered options, B is the most reliable: a tool with an input JSON schema constrains the tool_use input to conform, and the validation-retry loop (feed the specific error back on failure) gives a self-correcting recovery path that the others lack. Note that the CURRENT preferred mechanism for structured output is actually output_config.format with type \"json_schema\" (constrained decoding), with strict:true tool use also valid; schema-constrained tool_use as in B is the older but still-valid pattern, and it's the strongest choice presented here. C is a weaker version of the right idea — a plain instruction helps but gives no schema enforcement and no recovery when it slips, which is exactly the failure described. D is backwards: higher temperature increases output variance, making schema drift worse, not better. A treats the symptom with a brittle regex that still fails on the near-miss schemas and missing fields that validation is meant to catch."
   },
   {
     "id": "cicd-q6",
@@ -3779,7 +3779,7 @@
       }
     ],
     "correctOptionId": "C",
-    "explanation": "Correct: The canonical way to get schema-conformant structured output is tool_use — define a tool with an input_json_schema, and the model returns a tool_use block whose input is a structured object matching that schema, eliminating prose/markdown-wrapping problems. A is a plausible mistake: temperature 0 reduces sampling variance but does not constrain output to a schema or stop prose-wrapping. D is the naive prompt-only approach that already failed — emphatic instructions still leave the model free to add fences or extra keys. B confuses the Batch API (an asynchronous, cheaper way to run bulk jobs) with structured-output enforcement; Batch changes how/when requests run, not the output format."
+    "explanation": "Correct (among the offered options): defining a tool with an input_json_schema and reading the structured object from the returned tool_use block reliably yields schema-shaped output, eliminating prose/markdown-wrapping problems — and adding strict:true makes that tool use schema-enforcing. Note, however, that the CURRENT preferred mechanism for structured output is output_config.format with type \"json_schema\" (constrained decoding), which guarantees conformance directly; strict tool use is also valid, while plain tool_use-for-JSON (C) is the older-but-still-working pattern and the best of the choices listed here. A is a plausible mistake: temperature 0 reduces sampling variance but does not constrain output to a schema or stop prose-wrapping. D is the naive prompt-only approach that already failed — emphatic instructions still leave the model free to add fences or extra keys. B confuses the Batch API (an asynchronous, cheaper way to run bulk jobs) with structured-output enforcement; Batch changes how/when requests run, not the output format."
   },
   {
     "id": "extraction-q2",
@@ -3872,7 +3872,7 @@
       }
     ],
     "correctOptionId": "D",
-    "explanation": "Correct: The Batch API is purpose-built for exactly this profile — large-volume, non-latency-sensitive jobs processed asynchronously at about 50% lower cost than standard Messages calls, which directly addresses both the overnight window and the cost pressure. B works functionally but forfeits the ~50% discount and adds rate-limit and orchestration overhead for no latency benefit anyone needs. A is a plausible confusion: streaming improves perceived latency for interactive use but does not reduce cost and does not suit a fire-and-forget batch. C is impossible and counterproductive — 400,000 receipts vastly exceed the 200K context window, and cramming many documents into one prompt degrades per-document accuracy rather than saving money."
+    "explanation": "Correct: The Batch API is purpose-built for exactly this profile — large-volume, non-latency-sensitive jobs processed asynchronously at about 50% lower cost than standard Messages calls, which directly addresses both the overnight window and the cost pressure. B works functionally but forfeits the ~50% discount and adds rate-limit and orchestration overhead for no latency benefit anyone needs. A is a plausible confusion: streaming improves perceived latency for interactive use but does not reduce cost and does not suit a fire-and-forget batch. C is impossible and counterproductive — 400,000 receipts vastly exceed any single context window (even the 1M-token window on current Opus/Sonnet models), and cramming many documents into one prompt degrades per-document accuracy rather than saving money."
   },
   {
     "id": "extraction-q5",
