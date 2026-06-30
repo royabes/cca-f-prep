@@ -24,7 +24,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     const s = load();
-    setR(computeReadiness(s.answers, s.exams, CORPUS, Date.now()));
+    setR(computeReadiness(s.answers, s.exams, CORPUS, Date.now(), s.srs));
     setDue(dueCards(s.srs, Date.now()).length);
   }, []);
 

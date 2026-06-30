@@ -1,5 +1,6 @@
-import type { AnswerRecord, ExamResult, Corpus, DomainKey } from "./types";
+import type { AnswerRecord, ExamResult, Corpus, DomainKey, SrsState } from "./types";
 import { DOMAINS, DOMAIN_MAP, EXAM } from "./domains";
+import { dueCards } from "./srs";
 
 export interface DomainReadiness {
   key: DomainKey;
@@ -70,6 +71,7 @@ export function computeReadiness(
   exams: ExamResult[],
   corpus: Corpus,
   now: number,
+  srs: Record<string, SrsState> = {},
 ): Readiness {
   const totalByDomain: Record<string, number> = {};
   for (const d of DOMAINS) totalByDomain[d.key] = 0;
@@ -160,7 +162,8 @@ export function computeReadiness(
     readinessScaled >= 740 &&
     perDomain.every((d) => d.mastery >= 65);
 
-  const prescriptions = buildPrescriptions(perDomain, exams, corpus, now);
+  const dueCount = dueCards(srs, now).length;
+  const prescriptions = buildPrescriptions(perDomain, exams, now, dueCount, examReady);
 
   // Overall confidence calibration buckets.
   const buckets: { confidence: 0 | 1 | 2; label: string; n: number; correct: number }[] = [
@@ -194,11 +197,14 @@ export function computeReadiness(
   };
 }
 
+const EXAM_CADENCE_DAYS = 7; // research: re-test every 5–7 days; consistency matters
+
 function buildPrescriptions(
   perDomain: DomainReadiness[],
   exams: ExamResult[],
-  _corpus: Corpus,
-  _now: number,
+  now: number,
+  dueCount: number,
+  examReady: boolean,
 ): Prescription[] {
   const out: Prescription[] = [];
 
@@ -233,7 +239,18 @@ function buildPrescriptions(
     });
   }
 
-  // 3) Low coverage prompt.
+  // 3) Spaced-repetition queue: clear what you're about to forget.
+  if (dueCount > 0) {
+    out.push({
+      kind: "review-due",
+      title: `Clear ${dueCount} card${dueCount === 1 ? "" : "s"} due for review`,
+      detail:
+        "Spaced repetition resurfaces missed questions and flashcards right before you'd forget them — clearing the queue is the highest-yield few minutes you can spend.",
+      href: "/review",
+    });
+  }
+
+  // 4) Low coverage prompt.
   const lowCov = perDomain.find((d) => d.coverage < 0.5 && d.totalQuestions > 0);
   if (lowCov) {
     out.push({
@@ -247,15 +264,26 @@ function buildPrescriptions(
     });
   }
 
-  // 4) Mock exam cadence (research: re-test every 5–7 days; consistency matters).
+  // 5) Mock-exam cadence.
   if (exams.length === 0) {
     out.push({
       kind: "take-exam",
       title: "Take a diagnostic mock exam",
       detail:
-        "60 questions, 120 minutes, weighted like the real CCA-F. Your recent mock scores are the single best predictor of passing.",
+        "60 questions, 120 minutes, weighted like the real CCA-F. A diagnostic baseline shows where to point your prep — and recent mock scores are the single best predictor of passing.",
       href: "/exam",
     });
+  } else if (!examReady) {
+    const latest = Math.max(...exams.map((e) => e.ts));
+    const days = Math.floor((now - latest) / (24 * 60 * 60 * 1000));
+    if (days >= EXAM_CADENCE_DAYS - 1) {
+      out.push({
+        kind: "take-exam",
+        title: "Take another mock exam",
+        detail: `It's been ${days} day${days === 1 ? "" : "s"} since your last mock. Consistency across recent mocks — not one good run — is what predicts passing, so retest to confirm you're holding the line.`,
+        href: "/exam",
+      });
+    }
   }
 
   return out.slice(0, 5);
