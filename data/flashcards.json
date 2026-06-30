@@ -63,7 +63,7 @@
     "id": "claudecode-f1",
     "domainKey": "claudecode",
     "front": "CLAUDE.md precedence order (highest to lowest authority)?",
-    "back": "Enterprise/policy -> user (~/.claude/CLAUDE.md) -> project (./CLAUDE.md) -> project-local. Files combine; more specific overrides more general, but enterprise policy beats everything."
+    "back": "Files CONCATENATE; more-specific overrides more-general. Authority high->low: enterprise/managed policy (non-excludable, beats everything) -> project-local (./CLAUDE.local.md) -> project (./CLAUDE.md) -> user (~/.claude/CLAUDE.md). Load order is broadest->specific (managed->user->project->local), but specificity wins on conflict."
   },
   {
     "id": "claudecode-f2",
@@ -123,7 +123,7 @@
     "id": "prompt-f1",
     "domainKey": "prompt",
     "front": "What is the recommended way to get reliable structured/JSON output from Claude?",
-    "back": "Define a tool with an input_json_schema (tool_use). The model returns a tool_use block whose input conforms to the schema. This is more robust than asking for raw JSON in the text."
+    "back": "Use output_config:{format:{type:\"json_schema\"}} for constrained decoding (current preferred), and/or define a tool with strict:true. Returning JSON via a plain tool_use block (input conforms to the tool schema) is an older, still-valid pattern. The deprecated output_format param should not be used."
   },
   {
     "id": "prompt-f2",
@@ -146,8 +146,8 @@
   {
     "id": "prompt-f5",
     "domainKey": "prompt",
-    "front": "What does prefilling the assistant turn accomplish?",
-    "back": "It steers the output format (e.g., prefill '{' to push toward JSON). It only steers — it does not validate or guarantee conformance."
+    "front": "What did prefilling the assistant turn accomplish (legacy-only technique)?",
+    "back": "On legacy models it steered output format (e.g., prefill '{' to push toward JSON) — steering only, no validation or guaranteed conformance. NOTE: prefill is REMOVED on the 4.6+ family (returns HTTP 400). Steer format instead via output_config.format (json_schema constrained decoding) or system instructions."
   },
   {
     "id": "prompt-f6",
@@ -219,7 +219,7 @@
     "id": "tools-f7",
     "domainKey": "tools",
     "front": "How is structured output produced from Claude?",
-    "back": "Via tool_use: define a tool with an input_json_schema; the model returns a tool_use block whose input conforms to that schema. Add a validation-retry loop, feeding errors back on failure."
+    "back": "Preferred (current): output_config:{format:{type:\"json_schema\", ...}} for constrained decoding, and/or strict:true tool use. Older (still valid) pattern: define a tool with an input_json_schema and read the conforming tool_use block, with a validation-retry loop feeding errors back on failure. Note: the output_format param is deprecated."
   },
   {
     "id": "tools-f8",
@@ -242,8 +242,8 @@
   {
     "id": "context-f1",
     "domainKey": "context",
-    "front": "What is the standard context window size for Claude models?",
-    "back": "200K tokens (standard). All inputs — system prompt, tools, retrieved docs, history — and the output share this budget."
+    "front": "What is the context window size for Claude models?",
+    "back": "There is NO universal 200K window. Opus/Sonnet/Fable default to 1M tokens; Haiku 4.5 = 200K. All inputs — system prompt, tools, retrieved docs, history — and the output share this budget. Overflow => stop_reason model_context_window_exceeded."
   },
   {
     "id": "context-f2",
