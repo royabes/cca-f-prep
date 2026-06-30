@@ -34,6 +34,31 @@ function resolveApiKey(): string | null {
   return null;
 }
 
+// Abuse protection on a token-spending endpoint. NOTE: in-memory state is
+// per-instance — fine for self-host / single instance; for a serverless deploy
+// (e.g. Vercel) put a shared store (Upstash/Redis) or platform WAF in front.
+const RATE_LIMIT = 30; // requests per window per client
+const RATE_WINDOW_MS = 60_000;
+const MAX_BODY_CHARS = 24_000; // hard cap on request body size
+const buckets = new Map<string, { count: number; resetAt: number }>();
+
+function clientIp(req: NextRequest): string {
+  const xff = req.headers.get("x-forwarded-for");
+  return (xff ? xff.split(",")[0].trim() : "") || req.headers.get("x-real-ip") || "local";
+}
+
+// Returns seconds-to-wait if the client is over the limit, else null.
+function rateLimitedFor(ip: string, now: number): number | null {
+  const b = buckets.get(ip);
+  if (!b || now > b.resetAt) {
+    buckets.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    return null;
+  }
+  if (b.count >= RATE_LIMIT) return Math.max(1, Math.ceil((b.resetAt - now) / 1000));
+  b.count++;
+  return null;
+}
+
 interface QuestionPayload {
   scenario?: string | null;
   stem: string;
@@ -44,6 +69,18 @@ interface QuestionPayload {
 }
 
 export async function POST(req: NextRequest) {
+  // 1) Throttle first — cheapest rejection, protects even the no-key path.
+  const retryAfter = rateLimitedFor(clientIp(req), Date.now());
+  if (retryAfter !== null) {
+    return NextResponse.json({ error: "rate_limited" }, { status: 429, headers: { "retry-after": String(retryAfter) } });
+  }
+
+  // 2) Cap request size before parsing/spending tokens.
+  const raw = await req.text();
+  if (raw.length > MAX_BODY_CHARS) {
+    return NextResponse.json({ error: "payload_too_large" }, { status: 413 });
+  }
+
   const apiKey = resolveApiKey();
   if (!apiKey) {
     return NextResponse.json({ error: "no_api_key" }, { status: 503 });
@@ -56,7 +93,7 @@ export async function POST(req: NextRequest) {
     messages?: { role: "user" | "assistant"; content: string }[];
   };
   try {
-    body = await req.json();
+    body = JSON.parse(raw);
   } catch {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
@@ -64,7 +101,7 @@ export async function POST(req: NextRequest) {
   const level = body.level && LEVEL_PERSONA[body.level] ? body.level : "practitioner";
   const persona = LEVEL_PERSONA[level];
   const client = new Anthropic({ apiKey });
-  const model = process.env.TUTOR_MODEL || "claude-haiku-4-5-20251001";
+  const model = process.env.TUTOR_MODEL || "claude-haiku-4-5";
 
   let system = `${BASE_SYSTEM}\n\nLEARNER LEVEL: ${persona}`;
   let messages: { role: "user" | "assistant"; content: string }[];
@@ -109,7 +146,8 @@ export async function POST(req: NextRequest) {
       .trim();
     return NextResponse.json({ text, model });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "tutor_error";
-    return NextResponse.json({ error: "tutor_error", detail: message }, { status: 502 });
+    // Log server-side only; never return raw provider/error detail to the client.
+    console.error("[tutor] generation error:", err);
+    return NextResponse.json({ error: "tutor_error" }, { status: 502 });
   }
 }
