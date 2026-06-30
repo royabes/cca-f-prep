@@ -85,15 +85,21 @@ export function computeReadiness(
     let wCorrect = 0;
     let confidentCorrect = 0;
     let confidentWrong = 0;
+    let ratedN = 0; // answers where confidence was genuinely captured (not exam mode)
     const distinct = new Set<string>();
 
     rows.forEach((a, i) => {
       const w = weights[i];
       wAttempts += w;
       if (a.correct) wCorrect += w;
-      if (a.confidence === 2 && a.correct) confidentCorrect++;
-      if (a.confidence === 2 && !a.correct) confidentWrong++;
       distinct.add(a.questionId);
+      // The mock exam records no real confidence (stored as a placeholder), so it
+      // must not feed the confidence/danger-zone stats — only count rated modes.
+      if (a.mode !== "exam") {
+        ratedN++;
+        if (a.confidence === 2 && a.correct) confidentCorrect++;
+        if (a.confidence === 2 && !a.correct) confidentWrong++;
+      }
     });
 
     const rawAccuracy = wAttempts > 0 ? wCorrect / wAttempts : 0;
@@ -102,8 +108,8 @@ export function computeReadiness(
       (wAttempts + PRIOR_STRENGTH);
 
     const n = rows.length;
-    const masteredFrac = n > 0 ? confidentCorrect / n : 0;
-    const misinformedFrac = n > 0 ? confidentWrong / n : 0;
+    const masteredFrac = ratedN > 0 ? confidentCorrect / ratedN : 0;
+    const misinformedFrac = ratedN > 0 ? confidentWrong / ratedN : 0;
 
     // Confident-but-wrong answers are the most dangerous; penalize mastery.
     const calibration = 1 - 0.45 * misinformedFrac;
@@ -163,6 +169,7 @@ export function computeReadiness(
     { confidence: 2, label: "Confident", n: 0, correct: 0 },
   ];
   for (const a of answers) {
+    if (a.mode === "exam") continue; // exam confidence is a placeholder, not a real self-rating
     const b = buckets[a.confidence];
     b.n++;
     if (a.correct) b.correct++;

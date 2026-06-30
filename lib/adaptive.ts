@@ -100,16 +100,15 @@ export function selectAdaptive(corpus: Corpus, opts: AdaptiveOpts): Question[] {
     return rows.filter((a) => a.correct).length / rows.length;
   }
 
-  // Allocate the session across domains.
+  // Allocate the session across domains by weakness weight. Largest-remainder
+  // so the slots sum EXACTLY to `count` — a small session (count < #domains)
+  // then goes to the weakest domains instead of always the first ones in
+  // blueprint order (the old Math.max(1,...) over-allocated then truncated).
   const weights = domainList.map((d) => ({
     key: d.key,
     w: (d.weight / 100) * (1.2 - recentAccuracy(d.key)),
   }));
-  const wsum = weights.reduce((s, x) => s + Math.max(0.01, x.w), 0);
-  const alloc = weights.map((x) => ({
-    key: x.key,
-    n: Math.max(1, Math.round((Math.max(0.01, x.w) / wsum) * count)),
-  }));
+  const alloc = apportion(weights, count);
 
   const chosen: Question[] = [];
   const used = new Set<string>();
@@ -143,6 +142,26 @@ export function selectAdaptive(corpus: Corpus, opts: AdaptiveOpts): Question[] {
 
   // Interleave domains: round-robin by domain rather than grouped blocks.
   return interleaveByDomain(chosen, rng).slice(0, count);
+}
+
+// Largest-remainder apportionment of `count` slots across domains by weight.
+// Sums to exactly `count`; gives leftover slots to the highest-weight domains.
+function apportion(weights: { key: DomainKey; w: number }[], count: number): { key: DomainKey; n: number }[] {
+  const adj = weights.map((x) => ({ key: x.key, w: Math.max(0.0001, x.w) }));
+  const wsum = adj.reduce((s, x) => s + x.w, 0);
+  const base = adj.map((x) => {
+    const raw = (x.w / wsum) * count;
+    return { key: x.key, n: Math.floor(raw), frac: raw - Math.floor(raw) };
+  });
+  let assigned = base.reduce((s, b) => s + b.n, 0);
+  const byFrac = [...base].sort((a, b) => b.frac - a.frac);
+  let i = 0;
+  while (assigned < count && byFrac.length > 0) {
+    byFrac[i % byFrac.length].n++;
+    assigned++;
+    i++;
+  }
+  return base.map((b) => ({ key: b.key, n: b.n }));
 }
 
 export function interleaveByDomain(qs: Question[], rng: Rng = Math.random): Question[] {

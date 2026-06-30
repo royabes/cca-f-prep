@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { interleaveByDomain, selectAdaptive } from "./adaptive";
 import { mulberry32 } from "./rng";
-import type { Question, DomainKey, Corpus } from "./types";
+import type { Question, DomainKey, Corpus, AnswerRecord } from "./types";
 
 function mkQ(id: string, domainKey: DomainKey): Question {
   return {
@@ -57,18 +57,44 @@ describe("interleaveByDomain", () => {
 });
 
 describe("selectAdaptive", () => {
+  const fullCorpus: Corpus = {
+    lessons: [],
+    flashcards: [],
+    questions: Array.from({ length: 60 }, (_, i) =>
+      mkQ(`q${i}`, (["agentic", "claudecode", "prompt", "tools", "context"] as DomainKey[])[i % 5]),
+    ),
+  };
+
   it("is deterministic for a given seed and returns `count` questions", () => {
-    const corpus: Corpus = {
-      lessons: [],
-      flashcards: [],
-      questions: Array.from({ length: 60 }, (_, i) =>
-        mkQ(`q${i}`, (["agentic", "claudecode", "prompt", "tools", "context"] as DomainKey[])[i % 5]),
-      ),
-    };
     const opts = { count: 10, level: "practitioner" as const, answers: [], srs: {}, now: 1000 };
-    const a = selectAdaptive(corpus, { ...opts, rng: mulberry32(7) }).map((q) => q.id);
-    const b = selectAdaptive(corpus, { ...opts, rng: mulberry32(7) }).map((q) => q.id);
+    const a = selectAdaptive(fullCorpus, { ...opts, rng: mulberry32(7) }).map((q) => q.id);
+    const b = selectAdaptive(fullCorpus, { ...opts, rng: mulberry32(7) }).map((q) => q.id);
     expect(a).toEqual(b);
     expect(a.length).toBe(10);
+  });
+
+  it("returns exactly `count` questions even for small sessions", () => {
+    for (const count of [1, 2, 3, 4]) {
+      const sel = selectAdaptive(fullCorpus, { count, level: "practitioner", answers: [], srs: {}, now: 1000, rng: mulberry32(count) });
+      expect(sel.length).toBe(count);
+    }
+  });
+
+  it("a small session targets the WEAKEST domains, not just the first ones in blueprint order", () => {
+    // Make agentic/claudecode/prompt strong (high recent accuracy => low weakness),
+    // leaving tools & context as the weakest (no history => assumed weak).
+    const strong: AnswerRecord[] = [];
+    let t = 1000;
+    for (const d of ["agentic", "claudecode", "prompt"] as DomainKey[]) {
+      for (let i = 0; i < 8; i++) {
+        strong.push({ questionId: `seen-${d}-${i}`, domainKey: d, chosenOptionId: "A", correct: true, confidence: 2, difficulty: "medium", ts: t++, mode: "practice" });
+      }
+    }
+    const sel = selectAdaptive(fullCorpus, { count: 2, level: "practitioner", answers: strong, srs: {}, now: t + 1, rng: mulberry32(3) });
+    expect(sel.length).toBe(2);
+    // Regression: the old max(1)-per-domain allocation + slice(0,count) always
+    // emitted agentic/claudecode first; now the two slots go to the weakest domains.
+    const domains = new Set(sel.map((q) => q.domainKey));
+    expect([...domains].every((d) => d === "tools" || d === "context")).toBe(true);
   });
 });
