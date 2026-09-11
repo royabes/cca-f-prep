@@ -17,8 +17,8 @@ const archivo = Archivo({
   display: "swap",
 });
 
-// Applies the saved theme before first paint so a light-mode visitor never sees a dark flash.
-const THEME_INIT = `(function(){try{var t=localStorage.getItem('theme');var d=t==='light'?false:t==='system'?window.matchMedia('(prefers-color-scheme: dark)').matches:true;var r=document.documentElement;if(d){r.classList.add('dark');r.style.colorScheme='dark'}else{r.classList.remove('dark');r.style.colorScheme='light'}}catch(e){}})();`;
+// Applies the saved theme before first paint so a dark-mode visitor never sees a light flash.
+const THEME_INIT = `(function(){try{var t=localStorage.getItem('theme');var d=t==='dark'?true:t==='system'?window.matchMedia('(prefers-color-scheme: dark)').matches:false;var r=document.documentElement;if(d){r.classList.add('dark');r.style.colorScheme='dark'}else{r.classList.remove('dark');r.style.colorScheme='light'}}catch(e){}})();`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
       </head>

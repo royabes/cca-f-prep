@@ -1,7 +1,7 @@
 "use client";
 
 // Same theme contract as royabes.com: a `dark` class on <html>, persisted under
-// the `theme` key, with `system` following the OS preference. Dark is the default.
+// the `theme` key, with `system` following the OS preference. Light is the default.
 import { createContext, useCallback, useContext, useEffect, useState, useSyncExternalStore } from "react";
 
 export type Theme = "dark" | "light" | "system";
@@ -15,17 +15,17 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 function getSystemTheme(): "dark" | "light" {
-  if (typeof window === "undefined") return "dark";
+  if (typeof window === "undefined") return "light";
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
 function readStoredTheme(): Theme {
-  if (typeof window === "undefined") return "dark";
+  if (typeof window === "undefined") return "light";
   try {
     const t = localStorage.getItem("theme");
-    return t === "light" || t === "system" || t === "dark" ? t : "dark";
+    return t === "light" || t === "system" || t === "dark" ? t : "light";
   } catch {
-    return "dark";
+    return "light";
   }
 }
 
@@ -39,7 +39,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       return () => mq.removeEventListener("change", callback);
     }, []),
     getSystemTheme,
-    () => "dark" as const,
+    () => "light" as const,
   );
 
   const resolvedTheme = theme === "system" ? systemTheme : theme;

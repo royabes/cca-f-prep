@@ -10,7 +10,7 @@
   uncertain, red = wrong.
 */
 
-/* Dark theme (default): the void */
+/* Dark theme: the void */
 html.dark {
   --paper: #0a0e1a;
   --paper-2: #141c31;
@@ -31,7 +31,7 @@ html.dark {
   --purple: #a78bfa;
 }
 
-/* Light theme: daylight reading of the same instrument */
+/* Light theme (default): daylight reading of the same instrument */
 html:not(.dark) {
   --paper: #f4f6fa;
   --paper-2: #e9eef6;
@@ -52,25 +52,25 @@ html:not(.dark) {
   --purple: #6d4fc2;
 }
 
-/* Fallback before the theme class lands: dark */
+/* Fallback before the theme class lands: light, the site's default */
 :root {
-  --paper: #0a0e1a;
-  --paper-2: #141c31;
-  --card: #0e1424;
-  --ink: #edf2fa;
-  --ink-soft: #93a0b8;
-  --ink-faint: #5c6880;
-  --line: #1c2740;
-  --line-strong: #2b3a5c;
-  --clay: #4ba8f0;
-  --clay-deep: #7cc4f8;
-  --clay-soft: color-mix(in srgb, #4ba8f0 12%, transparent);
-  --on-primary: #06121f;
-  --blue: #4ba8f0;
-  --green: #2ec98c;
-  --amber: #f0a63b;
-  --red: #f0705b;
-  --purple: #a78bfa;
+  --paper: #f4f6fa;
+  --paper-2: #e9eef6;
+  --card: #ffffff;
+  --ink: #0f1626;
+  --ink-soft: #46536c;
+  --ink-faint: #8792a8;
+  --line: #d8dfec;
+  --line-strong: #c3ccde;
+  --clay: #1d6fc2;
+  --clay-deep: #14538f;
+  --clay-soft: color-mix(in srgb, #1d6fc2 10%, transparent);
+  --on-primary: #ffffff;
+  --blue: #1d6fc2;
+  --green: #14855b;
+  --amber: #b37414;
+  --red: #c2412b;
+  --purple: #6d4fc2;
 }
 
 @theme inline {
