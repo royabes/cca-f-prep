@@ -201,7 +201,6 @@ export default function Dashboard() {
               href={`/study?d=${d.key}`}
               className="rounded-xl border border-[var(--line)] bg-[var(--card)] p-3 transition-colors hover:bg-[var(--paper-2)]"
             >
-              <div className="mb-1 h-1.5 w-8 rounded-full" style={{ background: d.accent }} />
               <div className="font-display text-2xl font-bold">
                 {d.weight}%
               </div>

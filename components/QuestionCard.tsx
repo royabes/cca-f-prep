@@ -54,8 +54,7 @@ export default function QuestionCard({
 
       {question.scenario && (
         <div
-          className="mb-4 rounded-xl border-l-[3px] bg-[var(--paper-2)] px-4 py-3 text-[0.9rem] leading-relaxed text-[var(--ink-soft)]"
-          style={{ borderColor: dm.accent }}
+          className="mb-4 rounded-xl border border-[var(--line)] bg-[var(--paper-2)] px-4 py-3 text-[0.9rem] leading-relaxed text-[var(--ink-soft)]"
         >
           <span className="mr-1 font-semibold uppercase tracking-wide text-[0.68rem] text-[var(--ink-faint)]">
             Scenario ·
