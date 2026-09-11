@@ -86,7 +86,7 @@ export default function PracticeSession({
         <div className="text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-[var(--clay)]">
           Session complete
         </div>
-        <div className="my-3 text-6xl font-bold" style={{ fontFamily: "Georgia, serif" }}>
+        <div className="font-display my-3 text-6xl font-bold">
           {pct}%
         </div>
         <p className="text-[var(--ink-soft)]">

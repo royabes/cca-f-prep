@@ -74,7 +74,14 @@ export const EXAM = {
   scaleMax: 1000,
   passScaled: 720,
   name: "Claude Certified Architect - Foundations",
-  code: "CCA-F",
+  code: "CCA-F", // the app's name; early coverage shortened the exam to this
+  officialCode: "CCAR-F", // Exam Guide v1.0, effective July 2026
+  feeUsd: 125,
+  validityMonths: 12,
+  scenariosPerSitting: 4,
+  scenarioBank: 6,
+  itemFormat: "multiple-choice and multiple-response",
+  guideVersion: "v1.0, July 2026",
 } as const;
 
 export const SCENARIOS: { key: string; title: string }[] = [

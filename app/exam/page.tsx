@@ -265,7 +265,7 @@ export default function ExamPage() {
     <div className="fade-in">
       <div className="sticky top-[57px] z-30 -mx-5 mb-5 border-b border-[var(--line)] bg-[var(--paper)]/90 px-5 py-2.5 backdrop-blur">
         <div className="flex items-center gap-3">
-          <span className={`text-lg font-bold tabular-nums ${low ? "text-[var(--red)]" : ""}`} style={{ fontFamily: "Georgia, serif" }}>
+          <span className={`text-lg font-bold tabular-nums ${low ? "text-[var(--red)]" : ""}`}>
             {fmt(remaining)}
           </span>
           <div className="flex-1">

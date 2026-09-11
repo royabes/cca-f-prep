@@ -2,16 +2,16 @@
 
 A focused, current playbook for passing the **Claude Certified Architect - Foundations (CCA-F)** exam, built to be used alongside this app.
 
-> ⚠️ **Provisional logistics.** The official Anthropic exam guide is gated behind the Skilljar / Claude Partner Network portal. The specific numbers below (720 cut, 60Q/120min, scaled 100-1000, $99 fee, 6-scenario pool, ProctorFree delivery, ~6-month expiry) come from consistently-agreeing **third-party** breakdowns. Treat them as provisional and **verify against the official Skilljar exam guide before exam day.** Domain names/weights are well corroborated.
+> **Logistics verified 2026-09-11** against Anthropic's official *Claude Certified Architect - Foundations Exam Guide*, version 1.0, effective July 2026, published on the Anthropic Academy (Skilljar) certification page. The exam code there is **CCAR-F**. Domain names and weights are unchanged from the March launch.
 
 ---
 
 ## 1. The exam at a glance
 
 - **What it is:** Anthropic's first official technical certification (launched 2026-03-12). A **301-level, 100% scenario-based architecture exam** for seasoned builders, *not* a course-completion badge. You play the architect on each scenario.
-- **Format:** 60 multiple-choice questions · 120 minutes · 1 correct + 3 distractors each · **closed-book** (no AI, no docs, no notes, no second monitor/tabs).
+- **Format:** 60 items · 120 minutes · **multiple-choice and multiple-response** (each item states how many responses to select) · **closed-book** (no AI, no docs, no notes, no second monitor/tabs). This app's practice bank is single-answer today, so rehearse "pick two" discipline on paper.
 - **Scoring:** scaled **100-1000, pass = 720** (equated across forms, *not* a raw percentage). Score report in ~2 business days.
-- **Logistics:** ~USD $99 ($0 for the first 5,000 Claude Partner Network employees); online-proctored (ProctorFree) or test center; credential reported to **expire after ~6 months**.
+- **Logistics:** USD $125 per attempt; proctored, online or at a test center per program policy; credential **valid 12 months** from the award date; score report shows pass/fail, the scaled score, and percent-correct by domain.
 - **Scenario pool (6; 4 served per sitting: study all six):** Customer Support Resolution Agent · Code Generation with Claude Code · Multi-Agent Research System · Developer Productivity with Claude · Claude Code for CI/CD · Structured Data Extraction.
 - **Audience:** architects/devs with **6+ months hands-on** on the Claude API, Agent SDK, Claude Code, and MCP. It rewards builders, not doc-skimmers.
 
@@ -121,7 +121,7 @@ Distractors are built from **stale knowledge that was correct on pre-2026 models
 ## 8. Exam-day checklist
 
 - [ ] Confirm this form allows **free flag-and-return** across all 60 items (the multi-pass plan depends on it).
-- [ ] Verify proctoring the day before: ProctorFree/test-center requirements, ID, webcam/room scan, stable internet, single monitor, clear desk.
+- [ ] Verify proctoring the day before: online-proctor or test-center requirements, ID, webcam/room scan, stable internet, single monitor, clear desk.
 - [ ] Walk the tutorial/intro screen to learn the **flag + review-list UI** before the clock starts.
 - [ ] Internalize the pacing checkpoints (Q15/Q30/Q45/Q60).
 - [ ] Do an **easy-points pass first** to bank the floor.
@@ -130,7 +130,7 @@ Distractors are built from **stale knowledge that was correct on pre-2026 models
 - [ ] Hunt the **load-bearing constraint** in every stem before reading options.
 - [ ] Ask **"which layer owns this?"** on hard scenarios.
 - [ ] Change a Pass-1 answer only for a specific articulable reason.
-- [ ] Bring valid ID; confirm fee status; note the ~6-month expiry.
+- [ ] Bring valid ID; confirm the $125 fee is paid; note the 12-month validity.
 
 ---
 

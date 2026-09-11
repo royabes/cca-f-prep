@@ -107,7 +107,7 @@ export default function TutorPage() {
               <div
                 className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-[0.92rem] leading-relaxed ${
                   m.role === "user"
-                    ? "bg-[var(--clay)] text-white"
+                    ? "bg-[var(--clay)] text-[var(--on-primary)]"
                     : "border border-[var(--line)] bg-[var(--paper-2)]"
                 }`}
               >

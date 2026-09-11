@@ -38,7 +38,7 @@ export function ScoreRing({
         />
       </svg>
       <div className="absolute flex flex-col items-center">
-        <span className="text-3xl font-bold tabular-nums" style={{ fontFamily: "Georgia, serif" }}>
+        <span className="font-display text-3xl font-bold tabular-nums">
           {Math.round(value)}
         </span>
         {label && <span className="text-[0.7rem] uppercase tracking-wider text-[var(--ink-faint)]">{label}</span>}
@@ -98,7 +98,7 @@ export function Stat({ label, value, sub }: { label: string; value: React.ReactN
   return (
     <div className="card-flat px-4 py-3">
       <div className="text-[0.7rem] uppercase tracking-wider text-[var(--ink-faint)]">{label}</div>
-      <div className="mt-0.5 text-2xl font-bold tabular-nums" style={{ fontFamily: "Georgia, serif" }}>
+      <div className="font-display mt-0.5 text-2xl font-bold tabular-nums">
         {value}
       </div>
       {sub && <div className="mt-0.5 text-[0.78rem] text-[var(--ink-soft)]">{sub}</div>}

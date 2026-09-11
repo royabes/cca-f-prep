@@ -1,26 +1,82 @@
 @import "tailwindcss";
 
+/* Class-based dark mode, the same strategy as royabes.com */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+  Pulse Cartography, the royabes.com palette, mapped onto the trainer's semantic
+  names so every component keeps reading var(--ink), var(--clay) and friends.
+  Color is state, not decoration: blue = action, green = correct, amber =
+  uncertain, red = wrong.
+*/
+
+/* Dark theme (default): the void */
+html.dark {
+  --paper: #0a0e1a;
+  --paper-2: #141c31;
+  --card: #0e1424;
+  --ink: #edf2fa;
+  --ink-soft: #93a0b8;
+  --ink-faint: #5c6880;
+  --line: #1c2740;
+  --line-strong: #2b3a5c;
+  --clay: #4ba8f0;
+  --clay-deep: #7cc4f8;
+  --clay-soft: color-mix(in srgb, #4ba8f0 12%, transparent);
+  --on-primary: #06121f;
+  --blue: #4ba8f0;
+  --green: #2ec98c;
+  --amber: #f0a63b;
+  --red: #f0705b;
+  --purple: #a78bfa;
+}
+
+/* Light theme: daylight reading of the same instrument */
+html:not(.dark) {
+  --paper: #f4f6fa;
+  --paper-2: #e9eef6;
+  --card: #ffffff;
+  --ink: #0f1626;
+  --ink-soft: #46536c;
+  --ink-faint: #8792a8;
+  --line: #d8dfec;
+  --line-strong: #c3ccde;
+  --clay: #1d6fc2;
+  --clay-deep: #14538f;
+  --clay-soft: color-mix(in srgb, #1d6fc2 10%, transparent);
+  --on-primary: #ffffff;
+  --blue: #1d6fc2;
+  --green: #14855b;
+  --amber: #b37414;
+  --red: #c2412b;
+  --purple: #6d4fc2;
+}
+
+/* Fallback before the theme class lands: dark */
 :root {
-  --paper: #f0eee6;
-  --paper-2: #f7f5ef;
-  --card: #fffdf8;
-  --ink: #1f1d1a;
-  --ink-soft: #514c44;
-  --ink-faint: #8a8279;
-  --line: #e3ddd0;
-  --line-strong: #d2c9b8;
-  --clay: #c2693f;
-  --clay-deep: #a8542f;
-  --clay-soft: #f3e2d8;
-  --blue: #3f7fc2;
-  --green: #2f9e7e;
-  --amber: #b3823f;
-  --red: #c0492f;
-  --purple: #6a4fb3;
+  --paper: #0a0e1a;
+  --paper-2: #141c31;
+  --card: #0e1424;
+  --ink: #edf2fa;
+  --ink-soft: #93a0b8;
+  --ink-faint: #5c6880;
+  --line: #1c2740;
+  --line-strong: #2b3a5c;
+  --clay: #4ba8f0;
+  --clay-deep: #7cc4f8;
+  --clay-soft: color-mix(in srgb, #4ba8f0 12%, transparent);
+  --on-primary: #06121f;
+  --blue: #4ba8f0;
+  --green: #2ec98c;
+  --amber: #f0a63b;
+  --red: #f0705b;
+  --purple: #a78bfa;
 }
 
 @theme inline {
-  --font-sans: var(--font-sans-stack);
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+  --font-display: var(--font-archivo), var(--font-inter), system-ui, sans-serif;
 }
 
 html {
@@ -29,17 +85,22 @@ html {
 }
 
 body {
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-inter), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   background:
-    radial-gradient(1200px 600px at 80% -10%, rgba(194, 105, 63, 0.06), transparent 60%),
+    radial-gradient(1100px 520px at 85% -10%, color-mix(in srgb, var(--clay) 7%, transparent), transparent 60%),
     var(--paper);
   min-height: 100vh;
 }
 
-h1, h2, h3, .display {
-  font-family: Georgia, "Times New Roman", "Iowan Old Style", serif;
-  letter-spacing: -0.01em;
+/* Display face for headings, the portfolio's callsign-scale type */
+h1, h2, h3, .display, .font-display {
+  font-family: var(--font-archivo), var(--font-inter), system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+code, pre, kbd, .mono {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
 }
 
 /* ---------- reusable primitives ---------- */
@@ -47,14 +108,14 @@ h1, h2, h3, .display {
 .card {
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 16px;
-  box-shadow: 0 1px 2px rgba(31, 29, 26, 0.03), 0 8px 24px -16px rgba(31, 29, 26, 0.18);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), 0 12px 32px -20px rgba(0, 0, 0, 0.45);
 }
 
 .card-flat {
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 12px;
 }
 
 .btn {
@@ -63,39 +124,40 @@ h1, h2, h3, .display {
   justify-content: center;
   gap: 0.5rem;
   font-weight: 600;
-  font-size: 0.92rem;
-  border-radius: 11px;
-  padding: 0.6rem 1.05rem;
+  font-size: 0.9rem;
+  border-radius: 8px;
+  padding: 0.55rem 1rem;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: transform 0.06s ease, background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition: transform 0.06s ease, background 0.15s ease, border-color 0.15s ease, color 0.15s ease, filter 0.15s ease;
   user-select: none;
 }
 .btn:active { transform: translateY(1px); }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
-.btn-primary { background: var(--clay); color: #fff; }
-.btn-primary:hover:not(:disabled) { background: var(--clay-deep); }
+.btn-primary { background: var(--clay); color: var(--on-primary); }
+.btn-primary:hover:not(:disabled) { filter: brightness(1.08); }
 
 .btn-ghost { background: transparent; color: var(--ink); border-color: var(--line-strong); }
 .btn-ghost:hover:not(:disabled) { background: var(--paper-2); }
 
 .btn-soft { background: var(--clay-soft); color: var(--clay-deep); }
-.btn-soft:hover:not(:disabled) { background: #ecd6c8; }
+.btn-soft:hover:not(:disabled) { background: color-mix(in srgb, var(--clay) 20%, transparent); }
 
+/* Status chip, the portfolio's badge: tiny, bold, uppercase, tracked */
 .chip {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  padding: 0.2rem 0.55rem;
-  border-radius: 999px;
-  border: 1px solid var(--line-strong);
+  padding: 0.22rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, var(--ink-faint) 30%, transparent);
   color: var(--ink-soft);
-  background: var(--paper-2);
+  background: color-mix(in srgb, var(--ink-faint) 10%, transparent);
 }
 
 .link-underline {
@@ -107,7 +169,7 @@ h1, h2, h3, .display {
 
 /* progress track */
 .track {
-  height: 9px;
+  height: 8px;
   border-radius: 999px;
   background: var(--line);
   overflow: hidden;
@@ -130,7 +192,6 @@ h1, h2, h3, .display {
 .prose-lesson ul { list-style: disc; }
 .prose-lesson ol { list-style: decimal; }
 .prose-lesson code {
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-size: 0.86em;
   background: var(--paper-2);
   border: 1px solid var(--line);

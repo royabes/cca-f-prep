@@ -1,6 +1,8 @@
 # CCA-F Trainer
 
-An evidence-based study app to **prepare for and pass the Claude Certified Architect - Foundations (CCA-F)** exam: Anthropic's first official technical credential.
+An evidence-based study app to **prepare for and pass the Claude Certified Architect - Foundations** exam, Anthropic's first official technical credential. The official exam code is **CCAR-F**; early coverage shortened it to CCA-F, which is where this app got its name.
+
+Live at **[cca.royabes.com](https://cca.royabes.com)**, part of [royabes.com](https://royabes.com). Open source under MIT so you can run your own copy.
 
 It combines four study modes the learning-science literature ranks highest, wrapped around the real exam blueprint:
 
@@ -24,7 +26,7 @@ A **readiness dashboard** ties it together: it diagnoses per-domain mastery, det
 | Tool Design & MCP Integration | 18% |
 | Context Management & Reliability | 15% |
 
-60 scenario-based multiple-choice questions · 120 minutes · closed-book · scaled 100-1000 · **pass at 720**. The exam draws from six scenarios: Customer Support Agent, Code Generation with Claude Code, Multi-Agent Research, Developer Productivity, Claude Code for CI/CD, and Structured Data Extraction.
+60 scenario-based items, multiple-choice and multiple-response · 120 minutes · 4 of 6 scenarios per sitting · scaled 100-1000 · **pass at 720** · $125 · credential valid 12 months (Exam Guide v1.0, effective July 2026). The scenario bank: Customer Support Agent, Code Generation with Claude Code, Multi-Agent Research, Developer Productivity, Claude Code for CI/CD, and Structured Data Extraction.
 
 ## Pedagogy baked in
 
@@ -38,20 +40,26 @@ A **readiness dashboard** ties it together: it diagnoses per-domain mastery, det
 | Diagnose → Prescribe → Learn → Iterate | Readiness dashboard prescribes next actions |
 | Readiness scoring with a consistency gate | Pass-probability + "exam-ready" only after repeated strong mocks |
 
-## Run it
+## Run it on your machine
+
+A plain Next.js 15 project with no database. Progress lives in your browser's `localStorage`, so there is nothing to provision.
 
 ```bash
+git clone https://github.com/royabes/cca-f-prep.git
+cd cca-f-prep
 npm install
 npm run dev      # http://localhost:3000
 ```
 
-Build for production / deploy (Vercel-ready):
+Production build, the same command Vercel runs:
 
 ```bash
 npm run build && npm start
 ```
 
-All progress is stored locally in your browser (`localStorage`), no account, no backend database.
+Checks before you commit: `npm run lint`, `npx tsc --noEmit`, `npm test`.
+
+To host your own copy, import the repo into Vercel or any Node host and set the tutor variables below in the project settings. The `/api/tutor` route runs on the Node runtime and rate-limits per instance, so put a platform rate limit in front of it on serverless hosts. The "What's new" panel on the dashboard reads `lib/whats-new.ts`; edit that file to publish your own notes.
 
 ## Enabling the AI tutor (optional)
 
@@ -60,7 +68,7 @@ The tutor calls the Claude API. Create a file named `.env.local` in the project 
 ```
 ANTHROPIC_API_KEY=sk-ant-your-key
 # optional override (defaults to a fast, cheap Claude model)
-TUTOR_MODEL=claude-haiku-4-5-20251001
+TUTOR_MODEL=claude-haiku-4-5
 ```
 
 On the developer machine it will also fall back to `~/.anthropic_api_key` if no env var is set. Without a key, every other feature still works: the tutor simply shows a friendly notice and the written explanations remain available.

@@ -8,6 +8,7 @@ import { computeReadiness, type Readiness } from "@/lib/readiness";
 import { dueCards } from "@/lib/srs";
 import { DOMAINS, DOMAIN_MAP, EXAM } from "@/lib/domains";
 import { ScoreRing, Bar, Badge, Stat } from "@/components/ui";
+import { WhatsNew } from "@/components/WhatsNew";
 import type { DomainKey } from "@/lib/types";
 
 const TIER_TONE: Record<string, "red" | "amber" | "blue" | "green"> = {
@@ -41,7 +42,7 @@ export default function Dashboard() {
       <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="mb-1 text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-[var(--clay)]">
-            {EXAM.code} · Exam Readiness
+            {EXAM.officialCode} · Exam Readiness
           </div>
           <h1 className="text-[2.1rem] leading-tight">
             {fresh ? "Let’s get you certified." : `You’re ${Math.round(r.passProbability * 100)}% likely to pass.`}
@@ -57,10 +58,12 @@ export default function Dashboard() {
             <div className="text-[0.7rem] font-semibold uppercase tracking-wider text-[var(--green)]">
               Consistency gate cleared
             </div>
-            <div className="text-lg font-bold">You’re exam-ready ✓</div>
+            <div className="font-display text-lg font-bold">You’re exam-ready ✓</div>
           </div>
         )}
       </div>
+
+      <WhatsNew />
 
       <div className="grid gap-5 lg:grid-cols-3">
         {/* Readiness card */}
@@ -162,7 +165,7 @@ export default function Dashboard() {
             <div className="card-flat px-4 py-3 transition-colors hover:bg-[var(--paper-2)]">
               <div className="text-[0.7rem] uppercase tracking-wider text-[var(--ink-faint)]">Due for review</div>
               <div className="mt-0.5 flex items-end gap-2">
-                <span className="text-2xl font-bold tabular-nums" style={{ fontFamily: "Georgia, serif" }}>
+                <span className="font-display text-2xl font-bold tabular-nums">
                   {due}
                 </span>
                 <span className="mb-1 text-[0.8rem] text-[var(--clay-deep)]">cards →</span>
@@ -182,10 +185,13 @@ export default function Dashboard() {
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-lg">The exam at a glance</h2>
           <div className="flex flex-wrap gap-2 text-[0.8rem] text-[var(--ink-soft)]">
-            <span className="chip">{EXAM.questionCount} questions</span>
+            <span className="chip">{EXAM.questionCount} items</span>
             <span className="chip">{EXAM.minutes} min</span>
-            <span className="chip">closed-book</span>
+            <span className="chip">{EXAM.scenariosPerSitting} of {EXAM.scenarioBank} scenarios</span>
+            <span className="chip">multi-response items</span>
             <span className="chip">pass ≥ {EXAM.passScaled}/1000</span>
+            <span className="chip">${EXAM.feeUsd}</span>
+            <span className="chip">valid {EXAM.validityMonths} months</span>
           </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-5">
@@ -196,7 +202,7 @@ export default function Dashboard() {
               className="rounded-xl border border-[var(--line)] bg-[var(--card)] p-3 transition-colors hover:bg-[var(--paper-2)]"
             >
               <div className="mb-1 h-1.5 w-8 rounded-full" style={{ background: d.accent }} />
-              <div className="text-2xl font-bold" style={{ fontFamily: "Georgia, serif" }}>
+              <div className="font-display text-2xl font-bold">
                 {d.weight}%
               </div>
               <div className="text-[0.8rem] font-medium leading-tight">{d.short}</div>
