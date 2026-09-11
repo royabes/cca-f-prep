@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { readCtx } from "@/lib/attribution";
+import { buildUsagePayload, postUsage } from "@/lib/usage-ingest";
 import Anthropic from "@anthropic-ai/sdk";
 import { readFileSync } from "fs";
 import { homedir } from "os";
@@ -135,6 +137,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const llmStart = Date.now();
     const msg = await client.messages.create({
       model,
       max_tokens: 700,
@@ -146,7 +149,10 @@ export async function POST(req: NextRequest) {
       .map((b) => b.text)
       .join("\n")
       .trim();
-    return NextResponse.json({ text, model });
+    await postUsage(
+      buildUsagePayload({ model, usage: msg.usage ?? null, latencyMs: Date.now() - llmStart, ctx: readCtx(req), mode: body.mode }),
+    );
+    return NextResponse.json({ text, model, usage: { input_tokens: msg.usage?.input_tokens ?? 0, output_tokens: msg.usage?.output_tokens ?? 0 } });
   } catch (err) {
     // Log server-side only; never return raw provider/error detail to the client.
     console.error("[tutor] generation error:", err);
