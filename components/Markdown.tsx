@@ -23,7 +23,7 @@ function renderInline(text: string, keyBase: string): React.ReactNode[] {
   return nodes;
 }
 
-export default function Markdown({ source }: { source: string }) {
+export default function Markdown({ source, compact = false }: { source: string; compact?: boolean }) {
   const lines = source.replace(/\r\n/g, "\n").split("\n");
   const blocks: React.ReactNode[] = [];
   let i = 0;
@@ -88,5 +88,5 @@ export default function Markdown({ source }: { source: string }) {
     blocks.push(<p key={key++}>{renderInline(para.join(" "), `p${key}`)}</p>);
   }
 
-  return <div className="prose-lesson">{blocks}</div>;
+  return <div className={compact ? "prose-chat" : "prose-lesson"}>{blocks}</div>;
 }

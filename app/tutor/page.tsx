@@ -1,5 +1,7 @@
 "use client";
 
+import Markdown from "@/components/Markdown";
+
 import { useEffect, useRef, useState } from "react";
 import { useSettings } from "@/components/Providers";
 import { LEVELS } from "@/lib/domains";
@@ -105,13 +107,13 @@ export default function TutorPage() {
           {messages.map((m, i) => (
             <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
               <div
-                className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-[0.92rem] leading-relaxed ${
+                className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-[0.92rem] leading-relaxed ${
                   m.role === "user"
-                    ? "bg-[var(--clay)] text-[var(--on-primary)]"
+                    ? "whitespace-pre-wrap bg-[var(--clay)] text-[var(--on-primary)]"
                     : "border border-[var(--line)] bg-[var(--paper-2)]"
                 }`}
               >
-                {m.content}
+                {m.role === "user" ? m.content : <Markdown source={m.content} compact />}
               </div>
             </div>
           ))}

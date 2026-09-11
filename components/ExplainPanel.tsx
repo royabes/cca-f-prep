@@ -1,5 +1,7 @@
 "use client";
 
+import Markdown from "@/components/Markdown";
+
 import { useState } from "react";
 import type { Question, UserLevel } from "@/lib/types";
 
@@ -49,11 +51,7 @@ export default function ExplainPanel({ question, level }: { question: Question; 
           <div className="mb-1 text-[0.7rem] font-semibold uppercase tracking-wider text-[var(--clay)]">
             ✦ Tutor · tailored to {level}
           </div>
-          {text.split("\n").filter(Boolean).map((p, i) => (
-            <p key={i} className="mt-1.5 first:mt-0">
-              {p}
-            </p>
-          ))}
+          <Markdown source={text} compact />
         </div>
       )}
       {state === "nokey" && (
