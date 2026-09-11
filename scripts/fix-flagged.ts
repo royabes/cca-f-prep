@@ -34,11 +34,11 @@ const FACTS = `CURRENT, DOCUMENTED ANTHROPIC FACTS:
 - Claude Code memory: CLAUDE.md files are CONCATENATED into context (NOT overriding). Load order broadest->most-specific: managed-policy -> user(~/.claude) -> project(./ or ./.claude) -> local(CLAUDE.local.md). More-specific is read LAST and WINS on conflict, so PROJECT overrides USER and LOCAL overrides PROJECT; managed policy is non-excludable/highest authority. .claude/rules: user-level loads before project, giving project rules higher priority. CLAUDE.md is injected context, not enforced config (use a PreToolUse hook, exit 2, for hard enforcement).
 - claude --bare = minimal mode skipping auto-discovery of hooks/skills/plugins/MCP/auto-memory/CLAUDE.md for fast, reproducible scripted/CI runs (a REAL flag).`;
 
-const CURRENCY = `This explanation calls tool_use-with-input_json_schema "the recommended/canonical/most reliable" way to get structured output. That phrasing is dated. Revise ONLY the explanation to: (a) stop calling tool_use the canonical/recommended method; (b) briefly note output_config.format (json_schema constrained decoding) is the CURRENT preferred mechanism (with strict:true tool use also valid); (c) keep the marked answer correct — it remains a valid choice among the OFFERED options. Do not change any option text or the correct answer.`;
+const CURRENCY = `This explanation calls tool_use-with-input_json_schema "the recommended/canonical/most reliable" way to get structured output. That phrasing is dated. Revise ONLY the explanation to: (a) stop calling tool_use the canonical/recommended method; (b) briefly note output_config.format (json_schema constrained decoding) is the CURRENT preferred mechanism (with strict:true tool use also valid); (c) keep the marked answer correct, it remains a valid choice among the OFFERED options. Do not change any option text or the correct answer.`;
 
 type Fix = { id: string; mode: "explanation" | "rewrite"; directive: string };
 const FIXES: Fix[] = [
-  { id: "prompt-q5", mode: "rewrite", directive: "This item currently treats assistant PREFILLING as a valid output-steering technique — STALE (prefill returns HTTP 400 on the 4.6+ family). Re-author it (original, scenario-based) so the correct answer reflects CURRENT practice: control/guarantee output format with output_config.format (json_schema constrained decoding) and/or strict tool use + system-prompt instructions. Make 'prefill the assistant turn' one of the WRONG options (tempting but removed). Keep the question testing format-control technique selection." },
+  { id: "prompt-q5", mode: "rewrite", directive: "This item currently treats assistant PREFILLING as a valid output-steering technique: STALE (prefill returns HTTP 400 on the 4.6+ family). Re-author it (original, scenario-based) so the correct answer reflects CURRENT practice: control/guarantee output format with output_config.format (json_schema constrained decoding) and/or strict tool use + system-prompt instructions. Make 'prefill the assistant turn' one of the WRONG options (tempting but removed). Keep the question testing format-control technique selection." },
   { id: "context-q3", mode: "explanation", directive: "Make the explanation model-accurate about context windows: do NOT assert a universal 200K window (Opus/Sonnet/Fable default 1M; Haiku 4.5 = 200K). Keep the correct answer (hybrid retrieval + rerank) and all option texts exactly; adjust only explanation phrasing." },
   { id: "extraction-q4", mode: "explanation", directive: "The explanation references the '200K context window' as if universal. Make it model-accurate (no universal 200K; Opus/Sonnet/Fable default 1M, Haiku 4.5 = 200K). The point that 400K receipts exceed any window and that the Batch API is the right tool still holds. Keep the correct answer (Batch API) and all options exactly; revise only explanation phrasing." },
   ...["prompt-q1", "prompt-q10", "prompt-q13", "support-q5", "codegen-q5", "research-q5", "devprod-q6", "cicd-q5", "extraction-q1"].map(
@@ -96,7 +96,7 @@ async function reaudit(q: Question): Promise<{ ok: boolean; issues: string[] }> 
 
 async function fixOne(q: Question, fix: Fix): Promise<{ id: string; q: Question; ok: boolean; issues: string[]; changed: boolean }> {
   if (fix.mode === "explanation") {
-    const sys = "You revise a CCA-F question's explanation for currency. Output ONLY the revised explanation text in <e>...</e> — nothing else.";
+    const sys = "You revise a CCA-F question's explanation for currency. Output ONLY the revised explanation text in <e>...</e>, nothing else.";
     const user = `${FACTS}\n\nQUESTION (correct answer = ${q.correctOptionId}):\nScenario: ${q.scenario}\nStem: ${q.stem}\nOptions:\n${q.options.map((o) => `${o.id}. ${o.text}`).join("\n")}\nCurrent explanation: ${q.explanation}\n\nTASK: ${fix.directive}\nKeep it 2-5 sentences, still referencing options by letter, consistent with the unchanged options and correct answer ${q.correctOptionId}. Output ONLY <e>revised explanation</e>.`;
     const e = grab(await ask(sys, user, 900), "e");
     const updated = { ...q, explanation: e };
@@ -105,7 +105,7 @@ async function fixOne(q: Question, fix: Fix): Promise<{ id: string; q: Question;
     const a = await reaudit(updated);
     return { id: q.id, q: a.ok ? updated : q, ok: a.ok, issues: a.issues, changed: a.ok };
   }
-  // rewrite mode — keep correctOptionId position to preserve the balanced key
+  // rewrite mode: keep correctOptionId position to preserve the balanced key
   const sys = "You re-author one CCA-F question. Output ONLY one JSON object in <q>...</q>.";
   const target = q.correctOptionId;
   const user = `${FACTS}\n\nORIGINAL (domain ${q.domainKey}, scenario ${q.scenarioKey}):\nScenario: ${q.scenario}\nStem: ${q.stem}\nOptions:\n${q.options.map((o) => `${o.id}. ${o.text}`).join("\n")}\nCorrect: ${q.correctOptionId}\nExplanation: ${q.explanation}\n\nTASK: ${fix.directive}\nThe SINGLE correct answer MUST stay at option ${target} (keep the answer key balanced). The other three are plausible-but-wrong (one should be the now-removed prefill technique). Distractor-aware explanation referencing letters; everything CURRENT. Output ONLY <q>{"scenario":"...","stem":"...","options":[{"id":"A","text":"..."},{"id":"B","text":"..."},{"id":"C","text":"..."},{"id":"D","text":"..."}],"correctOptionId":"${target}","explanation":"...","topic":"..."}</q>`;
@@ -147,7 +147,7 @@ async function main() {
   if (WRITE) {
     writeFileSync(qPath, JSON.stringify(merged, null, 2) + "\n");
     console.log(`WROTE ${qPath}`);
-  } else console.log("(dry run — pass --write)");
+  } else console.log("(dry run, pass --write)");
 }
 main().catch((e) => {
   console.error(e);

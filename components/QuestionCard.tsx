@@ -127,7 +127,7 @@ export default function QuestionCard({
             {wasRight ? (
               <Badge tone="green">Correct</Badge>
             ) : selected ? (
-              <Badge tone="red">{confidence === 2 ? "Confident — but wrong" : "Not quite"}</Badge>
+              <Badge tone="red">{confidence === 2 ? "Confident, but wrong" : "Not quite"}</Badge>
             ) : (
               <Badge tone="amber">Skipped</Badge>
             )}

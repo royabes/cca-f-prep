@@ -38,9 +38,9 @@ function ans(domainKey: DomainKey, correct: boolean, confidence: Confidence, mod
   return { questionId: `${domainKey}-${i}`, domainKey, chosenOptionId: "A", correct, confidence, difficulty: "medium", ts: 1000 + i, mode };
 }
 
-describe("computeReadiness — exam answers don't pollute confidence metrics", () => {
+describe("computeReadiness: exam answers don't pollute confidence metrics", () => {
   // 4 practice answers (all confidence=Confident): 2 wrong, 2 right.
-  // 10 exam answers (forced confidence=1, all correct) — should NOT touch confidence stats.
+  // 10 exam answers (forced confidence=1, all correct): should NOT touch confidence stats.
   const practice: AnswerRecord[] = [
     ans("agentic", false, 2, "practice", 0),
     ans("agentic", false, 2, "practice", 1),
@@ -69,7 +69,7 @@ describe("computeReadiness — exam answers don't pollute confidence metrics", (
   });
 });
 
-describe("computeReadiness — cadence & review prescriptions", () => {
+describe("computeReadiness, cadence & review prescriptions", () => {
   const now = 100 * DAY;
 
   it("prescribes clearing the spaced-repetition queue when cards are due", () => {

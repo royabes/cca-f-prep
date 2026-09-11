@@ -1,6 +1,6 @@
 // Deterministic, seedable PRNG (mulberry32). Used so that shuffling,
 // adaptive selection, and the answer-key debias migration are reproducible
-// and testable — never Math.random where determinism matters.
+// and testable, never Math.random where determinism matters.
 export type Rng = () => number;
 
 export function mulberry32(seed: number): Rng {

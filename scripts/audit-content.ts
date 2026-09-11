@@ -130,7 +130,7 @@ async function main() {
   console.log(`\nlessons changed: ${lessonsFixed.length}/${lessons.length}`);
   for (const r of lessonResults) console.log(`  ${r.domainKey}: ${r.changed ? "fixed " + r.applied.length + (r.reok ? " (reaudit ok)" : " (reaudit STILL flags)") : "clean"}${r.missed.length ? " | UNMATCHED finds: " + r.missed.length : ""}${r.issues.length && !r.changed ? " | note: " + r.issues[0] : ""}`);
   console.log(`flashcards changed: ${cardsFixed.length}/${cards.length}`);
-  for (const r of cardsFixed) console.log(`  ${r.id}: fixed ${r.reok ? "(reaudit ok)" : "(reaudit STILL flags)"} — ${(r.issues[0] || "").slice(0, 80)}`);
+  for (const r of cardsFixed) console.log(`  ${r.id}: fixed ${r.reok ? "(reaudit ok)" : "(reaudit STILL flags)"}, ${(r.issues[0] || "").slice(0, 80)}`);
 
   if (WRITE) {
     const newLessons = lessons.map((l) => {
@@ -145,7 +145,7 @@ async function main() {
     writeFileSync(fPath, JSON.stringify(newCards, null, 2) + "\n");
     console.log("\nWROTE lessons.json + flashcards.json (only reaudit-ok fixes applied)");
   } else {
-    console.log("\n(dry run — pass --write to apply reaudit-ok fixes)");
+    console.log("\n(dry run: pass --write to apply reaudit-ok fixes)");
   }
 }
 main().catch((e) => {

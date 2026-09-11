@@ -49,7 +49,7 @@ export default function Dashboard() {
           <p className="mt-2 max-w-xl text-[0.95rem] leading-relaxed text-[var(--ink-soft)]">
             {fresh
               ? "Start with a diagnostic mock exam or drill a domain. Your readiness score, weak-area prescriptions, and spaced-repetition queue build automatically as you practice."
-              : "Readiness blends your domain mastery with your recent mock-exam scores — the single best predictor of passing."}
+              : "Readiness blends your domain mastery with your recent mock-exam scores: the single best predictor of passing."}
           </p>
         </div>
         {r.examReady && (
@@ -120,12 +120,12 @@ export default function Dashboard() {
         <div className="card p-6 lg:col-span-2">
           <h2 className="mb-1 text-lg">Your study plan</h2>
           <p className="mb-4 text-[0.84rem] text-[var(--ink-soft)]">
-            Prescribed from your weakest, highest-weight, and over-confident areas — fix these first.
+            Prescribed from your weakest, highest-weight, and over-confident areas, fix these first.
           </p>
           <div className="grid gap-2.5">
             {r.prescriptions.length === 0 && (
               <div className="rounded-xl bg-[var(--paper-2)] px-4 py-3 text-[0.88rem] text-[var(--ink-soft)]">
-                No prescriptions yet — answer a few questions and your personalized plan appears here.
+                No prescriptions yet: answer a few questions and your personalized plan appears here.
               </div>
             )}
             {r.prescriptions.map((p, i) => (

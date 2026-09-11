@@ -166,7 +166,7 @@ export default function ReviewPage() {
             disabled={dueQ.length === 0}
             onClick={() => setMode("questions")}
           >
-            {dueQ.length === 0 ? "Nothing due — all caught up ✓" : `Review ${dueQ.length} questions`}
+            {dueQ.length === 0 ? "Nothing due, all caught up ✓" : `Review ${dueQ.length} questions`}
           </button>
         </div>
 
@@ -191,7 +191,7 @@ export default function ReviewPage() {
 
       {dueQ.length === 0 && flashTotal === 0 && (
         <div className="mt-5 card p-6 text-center text-[var(--ink-soft)]">
-          You’re fully caught up. New cards are created as you practice and take exams —{" "}
+          You’re fully caught up. New cards are created as you practice and take exams, {" "}
           <Link href="/practice" className="link-underline text-[var(--clay-deep)]">
             drill a domain
           </Link>{" "}

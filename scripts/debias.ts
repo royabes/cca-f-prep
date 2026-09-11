@@ -52,11 +52,11 @@ export function planBalancedPermutations(qs: Question[], rng: Rng): OptId[][] {
 
 // Deterministic check that a rewritten explanation is EXACTLY the original with
 // only its option-letter references relabeled per `oldToNew`. Guarantees:
-//  - no content drift: everything except standalone A–D letters is byte-identical;
+//  - no content drift: everything except standalone A-D letters is byte-identical;
 //  - B/C/D (never English words) map exactly per oldToNew;
 //  - A may either map (option reference) or stay A (the English article "A").
 // The only thing it can't adjudicate is whether a *retained* capital A was truly
-// an article vs. an unmapped option ref — surfaced via `aUnchanged` for review.
+// an article vs. an unmapped option ref, surfaced via `aUnchanged` for review.
 export function verifyRemap(
   oldExpl: string,
   newExpl: string,
@@ -85,7 +85,7 @@ export function verifyRemap(
     if (lo === "A") {
       if (ln === oldToNew.A) continue; // mapped option ref (also covers A→A identity)
       if (ln === "A") {
-        aUnchanged++; // retained — treated as the English article
+        aUnchanged++; // retained, treated as the English article
         continue;
       }
       issues.push(`A at slot ${i} became ${ln} (expected A or ${oldToNew.A})`);

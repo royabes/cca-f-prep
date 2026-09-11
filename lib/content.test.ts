@@ -3,7 +3,7 @@ import { CORPUS } from "./content";
 import { DOMAINS } from "./domains";
 import type { DomainKey } from "./types";
 
-// Guard tests on the SHIPPED question bank — these lock in schema integrity and,
+// Guard tests on the SHIPPED question bank: these lock in schema integrity and,
 // critically, the debiased answer-key distribution so the 88%-answer-A
 // regression can never silently return.
 describe("shipped question bank", () => {

@@ -4,9 +4,9 @@ import { Providers } from "@/components/Providers";
 import Nav from "@/components/Nav";
 
 export const metadata: Metadata = {
-  title: "CCA-F Trainer — Pass the Claude Certified Architect Exam",
+  title: "CCA-F Trainer: Pass the Claude Certified Architect Exam",
   description:
-    "An evidence-based trainer for the Claude Certified Architect — Foundations (CCA-F) exam: study briefs, adaptive practice, a full mock-exam simulator, spaced repetition, and a level-aware AI tutor.",
+    "An evidence-based trainer for the Claude Certified Architect - Foundations (CCA-F) exam: study briefs, adaptive practice, a full mock-exam simulator, spaced repetition, and a level-aware AI tutor.",
   icons: { icon: "/icon.svg" },
 };
 

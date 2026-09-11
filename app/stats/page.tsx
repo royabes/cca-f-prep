@@ -40,7 +40,7 @@ export default function StatsPage() {
   const topicMap = new Map<string, TopicStat>();
   for (const a of state.answers) {
     const q = CORPUS.questions.find((x) => x.id === a.questionId);
-    const topic = q?.topic ?? "—";
+    const topic = q?.topic ?? "-";
     const key = `${a.domainKey}::${topic}`;
     const t = topicMap.get(key) ?? { topic, domainKey: a.domainKey, correct: 0, total: 0 };
     t.total++;
@@ -57,7 +57,7 @@ export default function StatsPage() {
       <PageHeader
         kicker="Your data"
         title="Progress & calibration"
-        intro="The numbers behind your readiness — accuracy, how well-calibrated your confidence is, where you're weakest, and your mock-exam history."
+        intro="The numbers behind your readiness: accuracy, how well-calibrated your confidence is, where you're weakest, and your mock-exam history."
         right={
           <button
             className="btn btn-ghost"
@@ -76,7 +76,7 @@ export default function StatsPage() {
       <div className="grid gap-4 sm:grid-cols-4">
         <Stat label="Questions answered" value={state.answers.length} sub={`${accuracy}% correct`} />
         <Stat label="Mock exams" value={state.exams.length} sub={lastExam ? `last ${lastExam.scaledScore}` : "none yet"} />
-        <Stat label="Best scaled score" value={bestExam ? bestExam.scaledScore : "—"} sub={`pass ${EXAM.passScaled}`} />
+        <Stat label="Best scaled score" value={bestExam ? bestExam.scaledScore : "-"} sub={`pass ${EXAM.passScaled}`} />
         <Stat label="Readiness" value={r.readinessScaled} sub={r.tier} />
       </div>
 
@@ -86,7 +86,7 @@ export default function StatsPage() {
           <h2 className="text-lg">Confidence calibration</h2>
           <p className="mb-4 mt-1 text-[0.84rem] text-[var(--ink-soft)]">
             Well-calibrated learners are accurate when confident and unsure when guessing. Being{" "}
-            <strong>confident but wrong</strong> is the dangerous zone — you’d trust a wrong answer in the exam.
+            <strong>confident but wrong</strong> is the dangerous zone: you’d trust a wrong answer in the exam.
           </p>
           <div className="grid gap-4">
             {r.calibration.map((c) => {
@@ -108,7 +108,7 @@ export default function StatsPage() {
               );
             })}
             {state.answers.length === 0 && (
-              <p className="text-[0.86rem] text-[var(--ink-faint)]">No data yet — answer some questions.</p>
+              <p className="text-[0.86rem] text-[var(--ink-faint)]">No data yet, answer some questions.</p>
             )}
           </div>
         </div>
@@ -127,7 +127,7 @@ export default function StatsPage() {
                     </Link>
                     {d.misinformedFrac > 0.12 && d.attempts >= 4 && <Badge tone="red">danger</Badge>}
                     <span className="ml-auto tabular-nums text-[var(--ink-soft)]">
-                      {d.attempts > 0 ? `${Math.round(d.rawAccuracy * 100)}% acc` : "—"}
+                      {d.attempts > 0 ? `${Math.round(d.rawAccuracy * 100)}% acc` : "-"}
                     </span>
                   </div>
                   <Bar value={d.mastery} color={meta.accent} />

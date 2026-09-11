@@ -51,8 +51,8 @@ if (clean && WRITE) {
   writeFileSync(qPath, JSON.stringify(rebalanced, null, 2) + "\n");
   console.log(`\nWROTE ${qPath} (backup at questions.json.bak)`);
 } else if (!WRITE) {
-  console.log(clean ? "\nAll checks pass — re-run with --write to apply." : "\nProblems found — NOT writable.");
+  console.log(clean ? "\nAll checks pass: re-run with --write to apply." : "\nProblems found, NOT writable.");
 } else {
-  console.log("\nNOT WRITING — resolve the problems above first.");
+  console.log("\nNOT WRITING: resolve the problems above first.");
 }
 process.exit(clean || !WRITE ? 0 : 1);

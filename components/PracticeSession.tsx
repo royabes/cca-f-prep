@@ -113,7 +113,7 @@ export default function PracticeSession({
               <Badge tone="red">Danger zone</Badge>
               <span className="font-semibold">{confidentWrong.length} confident-but-wrong</span>
             </div>
-            These are your highest-risk gaps — you believed a wrong answer. Re-read the relevant lesson, then
+            These are your highest-risk gaps: you believed a wrong answer. Re-read the relevant lesson, then
             re-drill that domain. They’ve been queued for spaced review.
           </div>
         )}

@@ -25,7 +25,7 @@ function apiKey(): string {
 const client = new Anthropic({ apiKey: apiKey() });
 const root = resolve(import.meta.dirname, "..");
 
-const CURRENT_FACTS = `CURRENT, DOCUMENTED ANTHROPIC FACTS (the exam is closed-book on CURRENT behavior — never write a stale claim as correct):
+const CURRENT_FACTS = `CURRENT, DOCUMENTED ANTHROPIC FACTS (the exam is closed-book on CURRENT behavior, never write a stale claim as correct):
 - Model IDs are bare, never date-suffixed: claude-opus-4-8, claude-opus-4-7, claude-opus-4-6, claude-sonnet-4-6, claude-haiku-4-5 (and claude-fable-5). NEVER "claude-*-YYYYMMDD".
 - Assistant PREFILLING is REMOVED on the 4.6+ family (Opus 4.6/4.7/4.8, Sonnet 4.6, Fable 5): it returns HTTP 400. Use output_config.format or system-prompt instructions to steer format. Prefill is only valid as a legacy/older-model technique.
 - Context window: current Opus/Sonnet/Fable default to 1M tokens; Haiku 4.5 is 200K. Do NOT assert a universal 200K window. Overflow surfaces as stop_reason "model_context_window_exceeded".
@@ -108,7 +108,7 @@ ${JSON.stringify(synthesis)}
 OUR CURRENT TOPIC COVERAGE (avoid the over-saturated clusters named in the de-dup guidance):
 ${currentTopics}
 
-Each spec: {"domainKey":"agentic|claudecode|prompt|tools|context","scenarioKey":"support|codegen|research|devprod|cicd|extraction","difficulty":"easy|medium|hard","competency":"<short competency from the map/gaps>","angle":"<the specific decision/distinction this one question tests — concrete, distinct from every other spec>"}.
+Each spec: {"domainKey":"agentic|claudecode|prompt|tools|context","scenarioKey":"support|codegen|research|devprod|cicd|extraction","difficulty":"easy|medium|hard","competency":"<short competency from the map/gaps>","angle":"<the specific decision/distinction this one question tests: concrete, distinct from every other spec>"}.
 
 Rules:
 - Per-domain totals MUST match proposedCounts (agentic 19, claudecode 8, prompt 18, tools 12, context 10 = 67).
@@ -122,13 +122,13 @@ Rules:
 }
 
 const GEN_SYS =
-  "You are an expert item-writer for the Anthropic Claude Certified Architect — Foundations (CCA-F) exam. You write ORIGINAL, scenario-based, single-best-answer multiple-choice questions grounded ONLY in current, documented Anthropic behavior. Never copy or paraphrase any existing question. Output ONLY one JSON object wrapped in <q>...</q>.";
+  "You are an expert item-writer for the Anthropic Claude Certified Architect - Foundations (CCA-F) exam. You write ORIGINAL, scenario-based, single-best-answer multiple-choice questions grounded ONLY in current, documented Anthropic behavior. Never copy or paraphrase any existing question. Output ONLY one JSON object wrapped in <q>...</q>.";
 
 function genPrompt(spec: Spec, target: OptId, prevIssues: string[] | null): string {
   const retry = prevIssues && prevIssues.length ? `\n\nYour previous attempt FAILED review:\n${prevIssues.map((s) => "- " + s).join("\n")}\nFix these.` : "";
   return `Write ONE original CCA-F question.
-Domain: ${spec.domainKey} — ${DOMAIN_TITLES[spec.domainKey]}
-Scenario framing: ${spec.scenarioKey} — ${SCENARIOS[spec.scenarioKey]}
+Domain: ${spec.domainKey}, ${DOMAIN_TITLES[spec.domainKey]}
+Scenario framing: ${spec.scenarioKey}, ${SCENARIOS[spec.scenarioKey]}
 Competency: ${spec.competency}
 Specific angle to test: ${spec.angle}
 Difficulty: ${spec.difficulty}
@@ -140,7 +140,7 @@ Requirements:
 - "stem": the question being asked.
 - Exactly four options A,B,C,D. The SINGLE correct answer MUST be option ${target}. The other three are plausible-but-wrong real-world anti-patterns (not absurd, not second-correct).
 - "correctOptionId": "${target}".
-- "explanation": 2-5 sentences — why ${target} is correct AND why each of the other three is wrong, referring to options by their letter.
+- "explanation": 2-5 sentences, why ${target} is correct AND why each of the other three is wrong, referring to options by their letter.
 - "topic": a 2-5 word tag.
 - Single best answer; no "all of the above"; no ambiguity; everything factually CURRENT.${retry}
 
@@ -161,8 +161,8 @@ ${existingTopics}
 
 Check ALL, assuming flawed until proven right:
 1. The marked answer ${q.correctOptionId} is the UNAMBIGUOUS single best answer per current documented behavior.
-2. The other three options are each clearly suboptimal/wrong — plausible distractors, NOT a second defensible answer.
-3. EVERY factual claim (in stem, options, explanation) is correct AND current — flag any stale claim (prefill-as-valid, universal-200K, output_format, budget_tokens, WebSocket-MCP, date-suffixed model ids, text-parsing for completion, etc.).
+2. The other three options are each clearly suboptimal/wrong: plausible distractors, NOT a second defensible answer.
+3. EVERY factual claim (in stem, options, explanation) is correct AND current: flag any stale claim (prefill-as-valid, universal-200K, output_format, budget_tokens, WebSocket-MCP, date-suffixed model ids, text-parsing for completion, etc.).
 4. Scenario fits its setting and is realistic; no trick/ambiguous wording.
 5. Explanation is correct and references the right option letters.
 6. Not a near-duplicate of an existing topic.

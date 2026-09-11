@@ -11,7 +11,7 @@ export interface DomainReadiness {
   rawAccuracy: number; // 0..1 (recency-weighted)
   mastery: number; // 0..100 (shrunken + calibration-penalized)
   masteredFrac: number; // confident & correct
-  misinformedFrac: number; // confident & WRONG — the "danger zone"
+  misinformedFrac: number; // confident & WRONG, the "danger zone"
   weight: number; // exam blueprint weight
 }
 
@@ -96,7 +96,7 @@ export function computeReadiness(
       if (a.correct) wCorrect += w;
       distinct.add(a.questionId);
       // The mock exam records no real confidence (stored as a placeholder), so it
-      // must not feed the confidence/danger-zone stats — only count rated modes.
+      // must not feed the confidence/danger-zone stats, only count rated modes.
       if (a.mode !== "exam") {
         ratedN++;
         if (a.confidence === 2 && a.correct) confidentCorrect++;
@@ -138,7 +138,7 @@ export function computeReadiness(
 
   const predictedScaled = scaledFromMastery(weightedMastery / 100);
 
-  // Blend with the most recent mock exams — the strongest predictor.
+  // Blend with the most recent mock exams, the strongest predictor.
   const recentExams = [...exams].sort((a, b) => b.ts - a.ts).slice(0, 3);
   let readinessScaled = predictedScaled;
   if (recentExams.length > 0) {
@@ -197,7 +197,7 @@ export function computeReadiness(
   };
 }
 
-const EXAM_CADENCE_DAYS = 7; // research: re-test every 5–7 days; consistency matters
+const EXAM_CADENCE_DAYS = 7; // research: re-test every 5-7 days; consistency matters
 
 function buildPrescriptions(
   perDomain: DomainReadiness[],
@@ -219,7 +219,7 @@ function buildPrescriptions(
       title: `Fix misconceptions in ${DOMAIN_MAP[d.key].short}`,
       detail: `You answered ${Math.round(
         d.misinformedFrac * 100,
-      )}% of these confidently but wrong — the highest-risk gap. Re-read the lesson, then re-drill.`,
+      )}% of these confidently but wrong: the highest-risk gap. Re-read the lesson, then re-drill.`,
       href: `/study?d=${d.key}`,
     });
   }
@@ -245,7 +245,7 @@ function buildPrescriptions(
       kind: "review-due",
       title: `Clear ${dueCount} card${dueCount === 1 ? "" : "s"} due for review`,
       detail:
-        "Spaced repetition resurfaces missed questions and flashcards right before you'd forget them — clearing the queue is the highest-yield few minutes you can spend.",
+        "Spaced repetition resurfaces missed questions and flashcards right before you'd forget them, clearing the queue is the highest-yield few minutes you can spend.",
       href: "/review",
     });
   }
@@ -270,7 +270,7 @@ function buildPrescriptions(
       kind: "take-exam",
       title: "Take a diagnostic mock exam",
       detail:
-        "60 questions, 120 minutes, weighted like the real CCA-F. A diagnostic baseline shows where to point your prep — and recent mock scores are the single best predictor of passing.",
+        "60 questions, 120 minutes, weighted like the real CCA-F. A diagnostic baseline shows where to point your prep, and recent mock scores are the single best predictor of passing.",
       href: "/exam",
     });
   } else if (!examReady) {
@@ -280,7 +280,7 @@ function buildPrescriptions(
       out.push({
         kind: "take-exam",
         title: "Take another mock exam",
-        detail: `It's been ${days} day${days === 1 ? "" : "s"} since your last mock. Consistency across recent mocks — not one good run — is what predicts passing, so retest to confirm you're holding the line.`,
+        detail: `It's been ${days} day${days === 1 ? "" : "s"} since your last mock. Consistency across recent mocks, not one good run, is what predicts passing, so retest to confirm you're holding the line.`,
         href: "/exam",
       });
     }

@@ -17,7 +17,7 @@ export const DOMAINS: DomainMeta[] = [
     short: "Agentic Arch.",
     weight: 27,
     blurb:
-      "The agentic loop, agents vs. workflows, task decomposition, orchestrator–subagent (hub-and-spoke), multi-agent topologies, the Agent SDK, hooks and guardrails.",
+      "The agentic loop, agents vs. workflows, task decomposition, orchestrator-subagent (hub-and-spoke), multi-agent topologies, the Agent SDK, hooks and guardrails.",
     accent: "#c2693f",
   },
   {
@@ -73,7 +73,7 @@ export const EXAM = {
   scaleMin: 100,
   scaleMax: 1000,
   passScaled: 720,
-  name: "Claude Certified Architect — Foundations",
+  name: "Claude Certified Architect - Foundations",
   code: "CCA-F",
 } as const;
 

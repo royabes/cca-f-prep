@@ -119,7 +119,7 @@ function PracticeInner() {
           <div>
             <h2 className="mb-1 text-base">Level</h2>
             <p className="text-[0.82rem] text-[var(--ink-soft)]">
-              <strong className="text-[var(--ink)]">{levelMeta.label}</strong> — {levelMeta.desc} Change it in the top
+              <strong className="text-[var(--ink)]">{levelMeta.label}</strong>, {levelMeta.desc} Change it in the top
               bar; it tunes difficulty and tutor explanations.
             </p>
           </div>

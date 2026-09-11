@@ -77,8 +77,8 @@ export interface ScoredExam {
   perDomain: Record<DomainKey, { correct: number; total: number }>;
 }
 
-// Exam score is raw correctness mapped to the 100–1000 scale (mirrors the real
-// closed-book exam — confidence is captured for calibration but not scored here).
+// Exam score is raw correctness mapped to the 100-1000 scale (mirrors the real
+// closed-book exam: confidence is captured for calibration but not scored here).
 export function scoreExam(
   questions: Question[],
   chosen: Record<string, "A" | "B" | "C" | "D" | null>,

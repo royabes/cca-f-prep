@@ -47,7 +47,7 @@ describe("shuffle with injected rng", () => {
   });
 });
 
-// Characterization tests — lock the verified scoring math so the debias
+// Characterization tests: lock the verified scoring math so the debias
 // migration provably cannot change pass/fail behavior.
 describe("scaledFromRaw (existing behavior)", () => {
   it("maps 0 to scaleMin and a perfect score to scaleMax", () => {

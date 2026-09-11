@@ -5,7 +5,7 @@ const LABELS: OptId[] = ["A", "B", "C", "D"];
 const DOMAIN_KEYS = ["agentic", "claudecode", "prompt", "tools", "context"];
 
 // Pick `n` correct-answer positions that keep the bank's A/B/C/D distribution as
-// even as possible — greedily assign each to the currently-lowest position.
+// even as possible: greedily assign each to the currently-lowest position.
 export function assignBalancedTargets(counts: Record<string, number>, n: number): OptId[] {
   const c: Record<OptId, number> = { A: counts.A || 0, B: counts.B || 0, C: counts.C || 0, D: counts.D || 0 };
   const out: OptId[] = [];

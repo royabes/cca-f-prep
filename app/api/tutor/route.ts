@@ -16,7 +16,7 @@ const LEVEL_PERSONA: Record<string, string> = {
 };
 
 const BASE_SYSTEM =
-  "You are an expert tutor for the Claude Certified Architect — Foundations (CCA-F) exam. " +
+  "You are an expert tutor for the Claude Certified Architect - Foundations (CCA-F) exam. " +
   "The exam covers five domains: Agentic Architecture & Orchestration, Claude Code Configuration & Workflows, " +
   "Prompt Engineering & Structured Output, Tool Design & MCP Integration, and Context Management & Reliability. " +
   "Be accurate, grounded in real Anthropic technology (Claude API, Agent SDK, Claude Code, MCP). " +
@@ -35,7 +35,7 @@ function resolveApiKey(): string | null {
 }
 
 // Abuse protection on a token-spending endpoint. NOTE: in-memory state is
-// per-instance — fine for self-host / single instance; for a serverless deploy
+// per-instance: fine for self-host / single instance; for a serverless deploy
 // (e.g. Vercel) put a shared store (Upstash/Redis) or platform WAF in front.
 const RATE_LIMIT = 30; // requests per window per client
 const RATE_WINDOW_MS = 60_000;
@@ -69,7 +69,7 @@ interface QuestionPayload {
 }
 
 export async function POST(req: NextRequest) {
-  // 1) Throttle first — cheapest rejection, protects even the no-key path.
+  // 1) Throttle first: cheapest rejection, protects even the no-key path.
   const retryAfter = rateLimitedFor(clientIp(req), Date.now());
   if (retryAfter !== null) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429, headers: { "retry-after": String(retryAfter) } });

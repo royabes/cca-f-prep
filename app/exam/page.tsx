@@ -128,7 +128,7 @@ export default function ExamPage() {
           Mirrors the real exam: {EXAM.questionCount} scenario-based questions drawn across the five domains by
           blueprint weight, {settings.examMinutes} minutes, no feedback until you submit. Your score is scaled
           {" "}
-          {EXAM.scaleMin}–{EXAM.scaleMax}; you pass at {EXAM.passScaled}.
+          {EXAM.scaleMin}-{EXAM.scaleMax}; you pass at {EXAM.passScaled}.
         </p>
 
         <div className="card mt-6 grid gap-3 p-6 sm:grid-cols-2">
@@ -147,7 +147,7 @@ export default function ExamPage() {
           </button>
         </div>
         <p className="mt-3 text-center text-[0.78rem] text-[var(--ink-faint)]">
-          Tip: simulate real conditions — no notes, no tab-switching. Your recent mock scores drive your
+          Tip: simulate real conditions, no notes, no tab-switching. Your recent mock scores drive your
           readiness prediction.
         </p>
       </div>
@@ -172,7 +172,7 @@ export default function ExamPage() {
             <div className="text-[0.72rem] font-semibold uppercase tracking-[0.16em]" style={{ color: passed ? "var(--green)" : "var(--red)" }}>
               {passed ? "Pass" : "Not yet"}
             </div>
-            <h1 className="text-[1.7rem]">{passed ? "You passed the mock." : "Below the line — keep going."}</h1>
+            <h1 className="text-[1.7rem]">{passed ? "You passed the mock." : "Below the line, keep going."}</h1>
           </div>
           <div className="grid items-center gap-6 p-6 sm:grid-cols-[auto_1fr]">
             <div className="mx-auto">

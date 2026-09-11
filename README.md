@@ -1,18 +1,18 @@
 # CCA-F Trainer
 
-An evidence-based study app to **prepare for and pass the Claude Certified Architect — Foundations (CCA-F)** exam — Anthropic's first official technical credential.
+An evidence-based study app to **prepare for and pass the Claude Certified Architect - Foundations (CCA-F)** exam: Anthropic's first official technical credential.
 
 It combines four study modes the learning-science literature ranks highest, wrapped around the real exam blueprint:
 
-- **Study briefs** — concise, exam-focused lessons for each of the 5 domains, grounded in the real Claude API, Agent SDK, Claude Code, and MCP.
-- **Adaptive practice** — interleaved, level-aware retrieval practice with per-question **confidence rating** and instant explanations.
-- **Mock-exam simulator** — a full 60-question, 120-minute, blueprint-weighted exam with a navigator, flagging, scaled scoring (100–1000, pass ≥ 720), and post-exam review.
-- **Spaced repetition** — an SM-2 scheduler that resurfaces missed questions and flashcards right before you'd forget them.
-- **AI tutor** — a Claude-powered tutor that explains any question or concept **at your level** (Newcomer / Practitioner / Architect).
+- **Study briefs**: concise, exam-focused lessons for each of the 5 domains, grounded in the real Claude API, Agent SDK, Claude Code, and MCP.
+- **Adaptive practice**, interleaved, level-aware retrieval practice with per-question **confidence rating** and instant explanations.
+- **Mock-exam simulator**: a full 60-question, 120-minute, blueprint-weighted exam with a navigator, flagging, scaled scoring (100-1000, pass ≥ 720), and post-exam review.
+- **Spaced repetition**: an SM-2 scheduler that resurfaces missed questions and flashcards right before you'd forget them.
+- **AI tutor**: a Claude-powered tutor that explains any question or concept **at your level** (Newcomer / Practitioner / Architect).
 
 A **readiness dashboard** ties it together: it diagnoses per-domain mastery, detects "confident-but-wrong" danger zones, blends your mastery with recent mock scores into a pass-probability, and **prescribes** what to study next.
 
-> 📘 **Preparing to sit the exam?** Read **[EXAM-PREP.md](EXAM-PREP.md)** — a week-by-week study plan tied to this app, time/scoring strategy, per-domain high-yield topics, the current-model "stale-knowledge" traps the exam exploits, and an exam-day checklist.
+> 📘 **Preparing to sit the exam?** Read **[EXAM-PREP.md](EXAM-PREP.md)**: a week-by-week study plan tied to this app, time/scoring strategy, per-domain high-yield topics, the current-model "stale-knowledge" traps the exam exploits, and an exam-day checklist.
 
 ## The exam (blueprint this app targets)
 
@@ -24,7 +24,7 @@ A **readiness dashboard** ties it together: it diagnoses per-domain mastery, det
 | Tool Design & MCP Integration | 18% |
 | Context Management & Reliability | 15% |
 
-60 scenario-based multiple-choice questions · 120 minutes · closed-book · scaled 100–1000 · **pass at 720**. The exam draws from six scenarios: Customer Support Agent, Code Generation with Claude Code, Multi-Agent Research, Developer Productivity, Claude Code for CI/CD, and Structured Data Extraction.
+60 scenario-based multiple-choice questions · 120 minutes · closed-book · scaled 100-1000 · **pass at 720**. The exam draws from six scenarios: Customer Support Agent, Code Generation with Claude Code, Multi-Agent Research, Developer Productivity, Claude Code for CI/CD, and Structured Data Extraction.
 
 ## Pedagogy baked in
 
@@ -51,7 +51,7 @@ Build for production / deploy (Vercel-ready):
 npm run build && npm start
 ```
 
-All progress is stored locally in your browser (`localStorage`) — no account, no backend database.
+All progress is stored locally in your browser (`localStorage`), no account, no backend database.
 
 ## Enabling the AI tutor (optional)
 
@@ -63,7 +63,7 @@ ANTHROPIC_API_KEY=sk-ant-your-key
 TUTOR_MODEL=claude-haiku-4-5-20251001
 ```
 
-On the developer machine it will also fall back to `~/.anthropic_api_key` if no env var is set. Without a key, every other feature still works — the tutor simply shows a friendly notice and the written explanations remain available.
+On the developer machine it will also fall back to `~/.anthropic_api_key` if no env var is set. Without a key, every other feature still works: the tutor simply shows a friendly notice and the written explanations remain available.
 
 ## Project layout
 
@@ -78,4 +78,4 @@ scripts/        Question-bank tooling: answer-key debias + research-driven gener
 
 ## Content provenance
 
-The question bank, flashcards, and lessons were authored and then **adversarially verified** against the real, documented behavior of Anthropic's tooling (Claude API, Agent SDK, Claude Code, MCP) — grounded in the **current** model family (e.g., assistant prefill is removed on 4.6+, 1M-token context windows, `output_config.format` structured outputs, the full `stop_reason` set). The bank was expanded against a researched competency map of all five domains, and every correct-answer position is balanced across A/B/C/D so the assessment can't be gamed. All questions are **original**; no third-party practice questions were copied. This is an independent study aid and is **not affiliated with, endorsed by, or sponsored by Anthropic**. Always cross-check exam logistics against Anthropic's official exam guide.
+The question bank, flashcards, and lessons were authored and then **adversarially verified** against the real, documented behavior of Anthropic's tooling (Claude API, Agent SDK, Claude Code, MCP), grounded in the **current** model family (e.g., assistant prefill is removed on 4.6+, 1M-token context windows, `output_config.format` structured outputs, the full `stop_reason` set). The bank was expanded against a researched competency map of all five domains, and every correct-answer position is balanced across A/B/C/D so the assessment can't be gamed. All questions are **original**; no third-party practice questions were copied. This is an independent study aid and is **not affiliated with, endorsed by, or sponsored by Anthropic**. Always cross-check exam logistics against Anthropic's official exam guide.

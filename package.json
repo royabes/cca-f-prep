@@ -2,7 +2,7 @@
   "name": "cca-f-prep",
   "version": "1.0.0",
   "private": true,
-  "description": "CCA-F Trainer — study, drill, and pass the Claude Certified Architect — Foundations exam",
+  "description": "CCA-F Trainer: study, drill, and pass the Claude Certified Architect - Foundations exam",
   "scripts": {
     "dev": "next dev",
     "dev:lan": "next dev -H 0.0.0.0",

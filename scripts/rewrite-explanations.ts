@@ -40,7 +40,7 @@ const partials: { id: string; newExplanation: string }[] = existsSync("/tmp/debi
 const partialById = new Map(partials.map((p) => [p.id, p.newExplanation]));
 
 const SYSTEM =
-  "You relabel the option-letter references in a multiple-choice question's explanation after its answer options have been reordered. You change ONLY the capital letters A-D that denote answer options; every other character stays byte-identical. Output ONLY the rewritten explanation wrapped in <new>...</new> — no preamble, no reasoning, no commentary.";
+  "You relabel the option-letter references in a multiple-choice question's explanation after its answer options have been reordered. You change ONLY the capital letters A-D that denote answer options; every other character stays byte-identical. Output ONLY the rewritten explanation wrapped in <new>...</new>, no preamble, no reasoning, no commentary.";
 
 function buildPrompt(p: Payload, prev: string | null, issues: string[] | null): string {
   const mapLines = (["A", "B", "C", "D"] as OptId[]).map((L) => `  old ${L} -> new ${p.oldToNew[L]}`).join("\n");
@@ -68,7 +68,7 @@ ${p.oldExplanation}
 
 Rewrite the explanation so every reference to an answer option uses its NEW letter (per the mapping).
 Rules:
-- B, C, D are ALWAYS option references — always remap them per the mapping.
+- B, C, D are ALWAYS option references: always remap them per the mapping.
 - A capital "A" may be an option reference (remap it) OR the ordinary English article "A" (leave it as "A"). Decide from context.
 - Change NOTHING else: same words, numbers, punctuation, sentence order. This is a relabel, not a reword.
 - If it begins "Correct (X):", set X to ${p.newCorrect}.${retry}`;

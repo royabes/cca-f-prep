@@ -3,7 +3,7 @@ import { render, screen, fireEvent, cleanup, act } from "@testing-library/react"
 
 // Deterministic 3-question exam. The correct option of every question carries
 // the same marker text so the test can always click the right answer regardless
-// of which letter (A–D) it lands on.
+// of which letter (A-D) it lands on.
 vi.mock("@/lib/content", () => {
   const mk = (id: string, correct: "A" | "B" | "C" | "D", domainKey: string) => ({
     id,
@@ -61,7 +61,7 @@ describe("exam timer expiry", () => {
       if (next && !next.disabled) fireEvent.click(next);
     }
 
-    // Let the clock run out WITHOUT pressing Submit — the bug path.
+    // Let the clock run out WITHOUT pressing Submit, the bug path.
     act(() => {
       vi.setSystemTime(Date.now() + 8_000_000); // well past the 120-minute limit
       vi.advanceTimersByTime(600); // fire one countdown tick → auto-submit

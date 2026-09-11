@@ -59,12 +59,12 @@ export default function ExplainPanel({ question, level }: { question: Question; 
       {state === "nokey" && (
         <div className="rounded-xl border border-[var(--line)] bg-[var(--paper-2)] px-4 py-3 text-[0.84rem] text-[var(--ink-soft)]">
           The live AI tutor needs an <code>ANTHROPIC_API_KEY</code>. The written explanation above still
-          covers the key reasoning — set the key (see README) to unlock tailored, level-aware coaching.
+          covers the key reasoning: set the key (see README) to unlock tailored, level-aware coaching.
         </div>
       )}
       {state === "error" && (
         <button onClick={ask} className="btn btn-ghost text-[0.84rem]">
-          Couldn’t reach the tutor — retry
+          Couldn’t reach the tutor, retry
         </button>
       )}
     </div>

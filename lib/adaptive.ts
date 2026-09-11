@@ -45,7 +45,7 @@ function buildStats(answers: AnswerRecord[]): Map<string, QStat> {
   return m;
 }
 
-// Priority score for picking a question — higher = more useful to study now.
+// Priority score for picking a question, higher = more useful to study now.
 function priority(q: Question, stat: QStat | undefined, level: UserLevel, dueIds: Set<string>): number {
   let p = 0;
   if (dueIds.has(q.id)) p += 100; // spaced-repetition due → top priority
@@ -101,7 +101,7 @@ export function selectAdaptive(corpus: Corpus, opts: AdaptiveOpts): Question[] {
   }
 
   // Allocate the session across domains by weakness weight. Largest-remainder
-  // so the slots sum EXACTLY to `count` — a small session (count < #domains)
+  // so the slots sum EXACTLY to `count`: a small session (count < #domains)
   // then goes to the weakest domains instead of always the first ones in
   // blueprint order (the old Math.max(1,...) over-allocated then truncated).
   const weights = domainList.map((d) => ({
@@ -172,7 +172,7 @@ export function interleaveByDomain(qs: Question[], rng: Rng = Math.random): Ques
     byDomain.set(q.domainKey, arr);
   }
   // Shuffle each domain's queue in place. (shuffle() returns a new array, so the
-  // result must be written back — discarding it was a silent no-op.)
+  // result must be written back, discarding it was a silent no-op.)
   for (const [key, arr] of byDomain) byDomain.set(key, shuffle(arr, rng));
   const queues = [...byDomain.values()];
   const out: Question[] = [];

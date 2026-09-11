@@ -65,8 +65,8 @@ if (!errors.length && WRITE) {
   writeFileSync(qPath, JSON.stringify(merged, null, 2) + "\n");
   console.log(`\nWROTE ${qPath} (${merged.length} questions)`);
 } else if (!WRITE) {
-  console.log(errors.length ? "\nProblems found — not writable." : "\nAll checks pass — re-run with --write to apply.");
+  console.log(errors.length ? "\nProblems found, not writable." : "\nAll checks pass: re-run with --write to apply.");
 } else {
-  console.log("\nNOT WRITING — fix problems first.");
+  console.log("\nNOT WRITING, fix problems first.");
 }
 process.exit(errors.length && WRITE ? 1 : 0);
