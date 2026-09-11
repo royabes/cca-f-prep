@@ -59,6 +59,8 @@ npm run build && npm start
 
 Checks before you commit: `npm run lint`, `npx tsc --noEmit`, `npm test`.
 
+The live site deploys automatically from the `master` branch through Vercel's GitHub integration, so a merged change is on cca.royabes.com about a minute later.
+
 To host your own copy, import the repo into Vercel or any Node host and set the tutor variables below in the project settings. The `/api/tutor` route runs on the Node runtime and rate-limits per instance, so put a platform rate limit in front of it on serverless hosts. The "What's new" panel on the dashboard reads `lib/whats-new.ts`; edit that file to publish your own notes.
 
 ## Enabling the AI tutor (optional)
